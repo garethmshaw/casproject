@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAS Portfolio Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f5f0;--surf:#fff;--surf2:#f0ede6;--surf3:#e8e4dc;
+  --bdr:#e2ddd5;--bdr2:#c8c0b4;
+  --tx:#1c1814;--tx2:#6b6258;--tx3:#9e9389;
+  --grn:#2d6a4f;--grn-bg:#d8f3dc;--grn-lt:#f0faf2;
+  --blu:#1a4f8a;--blu-bg:#dbeafe;
+  --amb:#92400e;--amb-bg:#fef3c7;
+  --red:#991b1b;--red-bg:#fee2e2;
+  --pur:#5b21b6;--pur-bg:#ede9fe;
+  --acc:#c45c2a;--acc2:#a84d22;
+  --r:10px;--rl:16px;
+  --sh:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.04);
+  --sh2:0 8px 32px rgba(0,0,0,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:15px;line-height:1.6;min-height:100vh}
+
+/* ── TOPBAR ── */
+.bar{background:var(--surf);border-bottom:1px solid var(--bdr);padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:var(--sh)}
+.bar-left{display:flex;align-items:center;gap:14px}
+.logo-zone{position:relative;cursor:pointer;flex-shrink:0}
+.logo-img{width:42px;height:42px;border-radius:9px;object-fit:cover;border:2px solid var(--bdr);transition:border-color .15s;display:block}
+.logo-img:hover{border-color:var(--acc)}
+.logo-ph{width:42px;height:42px;border-radius:9px;background:var(--surf2);border:2px dashed var(--bdr2);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .15s}
+.logo-ph:hover{border-color:var(--acc);background:#fdf0e8}
+.logo-file{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.bar-words{line-height:1.2}
+.bar-title{font-family:'DM Serif Display',serif;font-size:17px}
+.bar-hint{font-size:11px;color:var(--tx3)}
+.bar-right{display:flex;align-items:center;gap:10px}
+.sync-pill{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)}
+.dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--bdr2)}
+.dot.ok{background:var(--grn)}.dot.err{background:var(--red)}.dot.busy{background:var(--amb);animation:pulse .9s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.rtog{display:flex;background:var(--surf2);border-radius:8px;padding:3px;gap:2px}
+.rtbtn{padding:5px 14px;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--tx2);transition:all .15s}
+.rtbtn.on{background:var(--surf);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+/* ── LAYOUT ── */
+.main{max-width:1080px;margin:0 auto;padding:28px 20px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;border:1px solid var(--bdr);background:var(--surf);color:var(--tx);transition:all .15s}
+.btn:hover{background:var(--surf2);border-color:var(--bdr2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--acc);color:#fff;border-color:var(--acc)}
+.btn-p:hover{background:var(--acc2);border-color:var(--acc2)}
+.btn-sm{padding:5px 11px;font-size:13px}
+.btn-xs{padding:3px 8px;font-size:12px}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:#fca5a5}
+.btn-danger:hover{background:#fecaca}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--tx2)}
+.btn-ghost:hover{background:var(--surf2);color:var(--tx)}
+
+/* ── FORMS ── */
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+input[type=text],select,textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--tx);background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 13px;outline:none;transition:border-color .15s;line-height:1.5}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(196,92,42,.1)}
+textarea{resize:vertical;min-height:76px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:pointer}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--bdr);margin-bottom:22px}
+.tab{padding:9px 16px;font-size:14px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--tx2);border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:0;font-family:'DM Sans',sans-serif;transition:color .15s}
+.tab:hover{color:var(--tx)}
+.tab.on{color:var(--acc);border-bottom-color:var(--acc);font-weight:600}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px}
+.sc{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px 18px;box-shadow:var(--sh)}
+.sc .sl{font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.sc .sv{font-size:26px;font-family:'DM Serif Display',serif}
+.sc.hi{background:var(--acc);border-color:var(--acc)}
+.sc.hi .sl{color:rgba(255,255,255,.7)}.sc.hi .sv{color:#fff}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
+.b-single{background:var(--amb-bg);color:var(--amb)}
+.b-short{background:var(--grn-bg);color:var(--grn)}
+.b-extended{background:var(--blu-bg);color:var(--blu)}
+.b-project{background:var(--pur-bg);color:var(--pur)}
+.b-c{background:#fce7f3;color:#9d174d}
+.b-a{background:var(--amb-bg);color:var(--amb)}
+.b-s{background:var(--grn-bg);color:var(--grn)}
+.b-met{background:var(--grn-bg);color:var(--grn)}
+.b-unmet{background:var(--surf2);color:var(--tx3)}
+
+/* ── EXP CARDS ── */
+.exp-list{display:flex;flex-direction:column;gap:12px}
+.exp-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden;transition:box-shadow .15s}
+.exp-card:hover{box-shadow:var(--sh2)}
+.exp-body{padding:16px 20px}
+.exp-h{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.exp-name{font-size:15px;font-weight:600;font-family:'DM Serif Display',serif;margin-bottom:3px}
+.exp-meta{font-size:13px;color:var(--tx3)}
+.exp-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.exp-summary{font-size:14px;color:var(--tx2);margin-top:9px;line-height:1.6}
+
+/* ── EVIDENCE PANEL ── */
+.ev-panel{border-top:1px solid var(--bdr);padding:14px 20px;background:var(--bg)}
+.ev-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.ev-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx2)}
+.ev-count{background:var(--surf2);color:var(--tx3);font-size:11px;font-weight:600;padding:2px 7px;border-radius:10px}
+.ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:10px}
+.ev-thumb{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;transition:all .15s}
+.ev-thumb:hover{box-shadow:var(--sh2);border-color:var(--bdr2)}
+.ev-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.ev-thumb .ev-overlay{position:absolute;inset:0;background:rgba(28,24,20,0);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:background .15s}
+.ev-thumb:hover .ev-overlay{background:rgba(28,24,20,.55)}
+.ev-thumb .ev-overlay .ev-actions{opacity:0;transition:opacity .15s;display:flex;gap:5px}
+.ev-thumb:hover .ev-overlay .ev-actions{opacity:1}
+.ev-doc{border-radius:8px;background:var(--surf);border:1px solid var(--bdr);padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s}
+.ev-doc:hover{box-shadow:var(--sh2);border-color:var(--bdr2)}
+.ev-doc-icon{font-size:22px;flex-shrink:0;line-height:1}
+.ev-doc-info{flex:1;min-width:0}
+.ev-doc-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-doc-meta{font-size:11px;color:var(--tx3)}
+.ev-doc-actions{display:flex;gap:4px;flex-shrink:0}
+.ev-lo-label{font-size:11px;color:var(--tx3);margin-top:6px;margin-bottom:4px;font-weight:600}
+
+/* Drop zone */
+.ev-dropzone{border:2px dashed var(--bdr2);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
+.ev-dropzone:hover,.ev-dropzone.drag-over{border-color:var(--acc);background:#fdf0e8}
+.ev-dropzone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.ev-dropzone-icon{font-size:24px;margin-bottom:4px}
+.ev-dropzone-text{font-size:13px;color:var(--tx2);font-weight:500}
+.ev-dropzone-sub{font-size:12px;color:var(--tx3);margin-top:2px}
+
+/* Upload progress */
+.upload-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin-bottom:6px}
+.upload-bar-wrap{flex:1;height:5px;background:var(--bdr);border-radius:3px;overflow:hidden}
+.upload-bar{height:100%;background:var(--acc);border-radius:3px;transition:width .3s}
+.upload-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.upload-pct{font-size:12px;color:var(--tx3);white-space:nowrap}
+
+/* ── LO CARDS ── */
+.lo-grid{display:grid;gap:10px}
+.lo-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px;box-shadow:var(--sh)}
+.lo-card.lo-met{border-color:#6ee7b7;background:var(--grn-lt)}
+.lo-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.lo-num{width:34px;height:34px;border-radius:7px;background:var(--blu-bg);color:var(--blu);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lo-num.met{background:var(--grn-bg);color:var(--grn)}
+.lo-entry{background:var(--surf2);border-radius:7px;padding:10px 12px;margin-top:7px;font-size:13px}
+.lo-entry-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lo-file-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--surf);border:1px solid var(--bdr);border-radius:16px;font-size:12px;cursor:pointer;transition:all .15s;text-decoration:none;color:inherit}
+.lo-file-chip:hover{border-color:var(--blu);color:var(--blu)}
+.lo-file-chip .chip-icon{font-size:13px}
+
+/* ── REQ TABLE ── */
+.rt{width:100%;border-collapse:collapse;font-size:14px}
+.rt th{text-align:left;padding:9px 13px;background:var(--surf2);font-weight:600;color:var(--tx2);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.rt th:first-child{border-radius:7px 0 0 7px}.rt th:last-child{border-radius:0 7px 7px 0}
+.rt td{padding:11px 13px;border-bottom:1px solid var(--bdr)}
+.rmet{color:var(--grn);font-weight:600}.rno{color:var(--red)}
+
+/* ── STUDENT / CLASS ROWS ── */
+.row-list{display:flex;flex-direction:column;gap:7px}
+.r-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);cursor:pointer;box-shadow:var(--sh);transition:all .15s}
+.r-row:hover{box-shadow:var(--sh2);transform:translateY(-1px)}
+.r-name{font-weight:600;font-size:15px;font-family:'DM Serif Display',serif}
+.r-meta{font-size:13px;color:var(--tx3);margin-top:2px}
+.lo-dots{display:flex;gap:3px}
+.lo-dot{width:9px;height:9px;border-radius:50%;background:var(--bdr);border:1.5px solid var(--bdr2)}
+.lo-dot.on{background:var(--grn);border-color:var(--grn)}
+
+/* ── CLASS HEADER ── */
+.cls-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);margin-bottom:8px}
+.cls-name{font-family:'DM Serif Display',serif;font-size:18px}
+
+/* ── OVERVIEW TABLE ── */
+.ov-wrap{overflow-x:auto}
+.ov-table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
+.ov-table th{padding:9px 10px;background:var(--surf2);font-weight:600;color:var(--tx2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;text-align:left}
+.ov-table td{padding:9px 10px;border-bottom:1px solid var(--bdr)}
+.ov-table tr.stu-r{cursor:pointer}
+.ov-table tr.stu-r:hover td{background:var(--surf2)}
+.ov-table tr.cls-r td{background:var(--surf3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);padding:6px 10px}
+.ov-y{color:var(--grn);font-weight:700}.ov-n{color:var(--bdr2)}
+
+/* ── MODAL ── */
+.overlay{position:fixed;inset:0;background:rgba(28,24,20,.52);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow-y:auto;backdrop-filter:blur(3px)}
+.modal{background:var(--surf);border-radius:var(--rl);width:100%;max-width:640px;padding:26px;box-shadow:var(--sh2);border:1px solid var(--bdr)}
+.modal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bdr)}
+.modal-title{font-family:'DM Serif Display',serif;font-size:19px}
+.mclose{border:none;background:none;font-size:21px;cursor:pointer;color:var(--tx3);padding:2px 7px;line-height:1}
+.mclose:hover{color:var(--tx)}
+.msec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--tx3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.msec::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.mfoot{display:flex;justify-content:flex-end;gap:8px;padding-top:18px;border-top:1px solid var(--bdr);margin-top:18px}
+.lo-fi{border:1px solid var(--bdr);border-radius:var(--r);padding:12px;margin-bottom:9px;background:var(--bg)}
+.lo-fi-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+
+/* Lightbox */
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
+.lightbox img{max-width:100%;max-height:90vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.lightbox-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;line-height:1;opacity:.8}
+.lightbox-close:hover{opacity:1}
+.lightbox-name{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;background:rgba(0,0,0,.5);padding:6px 14px;border-radius:20px;white-space:nowrap}
+
+/* ── PAGE TITLES ── */
+.ph{font-family:'DM Serif Display',serif;font-size:24px;letter-spacing:-.01em}
+.psub{font-size:13px;color:var(--tx3);margin-top:2px}
+.ptitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px}
+.back-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:56px 20px;color:var(--tx3)}
+.empty-icon{font-size:38px;margin-bottom:10px;opacity:.6}
+.empty-title{font-size:16px;font-weight:600;color:var(--tx2);margin-bottom:5px;font-family:'DM Serif Display',serif}
+.card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:20px;box-shadow:var(--sh)}
+.spinner{width:18px;height:18px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
+@keyframes sp{to{transform:rotate(360deg)}}
+hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
+
+/* ── LO OVERVIEW GRID (student home) ── */
+.lo-overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:28px}
+.lo-ov-card{background:var(--surf);border:2px solid var(--bdr);border-radius:var(--rl);padding:16px 18px;cursor:pointer;transition:all .18s;box-shadow:var(--sh);position:relative;overflow:hidden}
+.lo-ov-card:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.lo-ov-card.is-met{border-color:#16a34a;background:#f0faf2}
+.lo-ov-card.not-met{border-color:#dc2626;background:#fff5f5}
+.lo-ov-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.lo-ov-label{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3)}
+.lo-ov-pill{padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;color:#000;letter-spacing:.03em}
+.lo-ov-pill.met{background:#16a34a;color:#000}
+.lo-ov-pill.unmet{background:#dc2626;color:#000}
+.lo-ov-title{font-family:'DM Serif Display',serif;font-size:15px;margin-bottom:4px;color:var(--tx)}
+.lo-ov-desc{font-size:12px;color:var(--tx3);line-height:1.45}
+.lo-ov-count{margin-top:10px;font-size:13px;font-weight:600;color:var(--tx2)}
+.lo-ov-count span{font-size:20px;font-family:'DM Serif Display',serif;margin-right:4px}
+.lo-ov-count span.met-num{color:#16a34a}
+.lo-ov-count span.unmet-num{color:#dc2626}
+.lo-ov-arrow{position:absolute;right:14px;bottom:14px;font-size:16px;color:var(--bdr2)}
+.lo-ov-card:hover .lo-ov-arrow{color:var(--tx2)}
+
+/* ── LO DETAIL SCREEN ── */
+.lo-detail-header{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:20px 24px;margin-bottom:18px;box-shadow:var(--sh)}
+.lo-detail-badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:10px}
+.lo-detail-badge.met{background:#16a34a;color:#000}
+.lo-detail-badge.unmet{background:#dc2626;color:#000}
+.lo-req-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:18px}
+.lo-req-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;box-shadow:var(--sh);text-align:center}
+.lo-req-num{font-size:28px;font-family:'DM Serif Display',serif;color:var(--tx)}
+.lo-req-done{font-size:13px;color:var(--tx3);margin-top:2px}
+.lo-req-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin-top:6px}
+.lo-req-card.req-ok{border-color:#16a34a;background:#f0faf2}
+.lo-req-card.req-ok .lo-req-num{color:#16a34a}
+
+/* ── APPROVAL WORKFLOW ── */
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.status-draft{background:var(--surf2);color:var(--tx2);border:1px solid var(--bdr)}
+.status-pending{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
+.status-feedback{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.status-met{background:#d8f3dc;color:#16a34a;border:1px solid #6ee7b7;color:#000}
+.approval-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:18px 20px;box-shadow:var(--sh);margin-bottom:10px;transition:box-shadow .15s}
+.approval-card:hover{box-shadow:var(--sh2)}
+.approval-card.pending-card{border-left:4px solid #f59e0b}
+.approval-card.feedback-card{border-left:4px solid #dc2626}
+.approval-card.met-card{border-left:4px solid #16a34a}
+.feedback-box{background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:14px;color:var(--tx)}
+.feedback-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#991b1b;margin-bottom:5px}
+.teacher-pending-badge{background:#f59e0b;color:#000;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+
+/* ── PDF PRINT ── */
+@media print{
+  body{background:#fff!important;font-size:11pt}
+  .bar,.no-print{display:none!important}
+  .main{max-width:100%;padding:0;margin:0}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.pdf-wrap{font-family:'DM Sans',sans-serif;font-size:11pt;color:#1c1814;padding:28px 32px;max-width:800px;margin:0 auto;background:#fff}
+.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;padding-bottom:14px;border-bottom:2.5px solid #c45c2a}
+.pdf-logo{width:58px;height:58px;object-fit:contain;border-radius:6px}
+.pdf-logo-ph{width:58px;height:58px;background:#f0ede6;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.pdf-hdr-c{flex:1;text-align:center;padding:0 14px}
+.pdf-doc-title{font-family:'DM Serif Display',serif;font-size:19pt;color:#c45c2a;margin-bottom:2px}
+.pdf-doc-sub{font-size:10pt;color:#6b6258}
+.pdf-hdr-r{text-align:right;font-size:10pt;color:#6b6258;min-width:110px}
+.pdf-stu{background:#f7f5f0;border-radius:10px;padding:13px 18px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.pdf-fl{font-size:9pt;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#9e9389;margin-bottom:1px}
+.pdf-fv{font-size:11pt;font-weight:600}
+.pdf-sec{font-family:'DM Serif Display',serif;font-size:13pt;margin:16px 0 9px;padding-bottom:5px;border-bottom:1px solid #e2ddd5}
+.pdf-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:16px}
+.pdf-stat{background:#f0ede6;border-radius:8px;padding:9px 12px;text-align:center}
+.pdf-stat-l{font-size:9pt;color:#9e9389;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
+.pdf-stat-v{font-size:17pt;font-family:'DM Serif Display',serif}
+.pdf-stat.hi{background:#c45c2a}
+.pdf-stat.hi .pdf-stat-l{color:rgba(255,255,255,.75)}.pdf-stat.hi .pdf-stat-v{color:#fff}
+.pdf-lo-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px}
+.pdf-lo-it{border:1px solid #e2ddd5;border-radius:8px;padding:9px 12px}
+.pdf-lo-it.m{background:#f0faf2;border-color:#6ee7b7}
+.pdf-lo-hdr{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.pdf-lo-tag{font-size:9pt;font-weight:700;padding:2px 6px;border-radius:10px;background:#dbeafe;color:#1a4f8a}
+.pdf-lo-tag.m{background:#d8f3dc;color:#2d6a4f}
+.pdf-lo-ttl{font-weight:600;font-size:10pt}
+.pdf-lo-ref{font-size:9pt;color:#6b6258;margin-top:2px;font-style:italic}
+.pdf-lo-files{margin-top:4px;font-size:8.5pt;color:#1a4f8a}
+.pdf-exp-table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:16px}
+.pdf-exp-table th{text-align:left;padding:7px 9px;background:#f0ede6;font-weight:600;color:#6b6258;font-size:8.5pt;text-transform:uppercase}
+.pdf-exp-table th:first-child{border-radius:5px 0 0 5px}.pdf-exp-table th:last-child{border-radius:0 5px 5px 0}
+.pdf-exp-table td{padding:7px 9px;border-bottom:1px solid #e2ddd5;vertical-align:top}
+.pdf-req-table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:16px}
+.pdf-req-table th{text-align:left;padding:7px 9px;background:#f0ede6;font-weight:600;color:#6b6258;font-size:8.5pt;text-transform:uppercase}
+.pdf-req-table th:first-child{border-radius:5px 0 0 5px}.pdf-req-table th:last-child{border-radius:0 5px 5px 0}
+.pdf-req-table td{padding:7px 9px;border-bottom:1px solid #e2ddd5}
+.pdf-rmet{color:#2d6a4f;font-weight:600}.pdf-rno{color:#991b1b}
+.pdf-notes{border:1px solid #e2ddd5;border-radius:8px;padding:12px;min-height:90px;margin-top:5px}
+.pdf-nl{font-size:9pt;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#9e9389;margin-bottom:5px}
+.pdf-foot{margin-top:20px;padding-top:10px;border-top:1px solid #e2ddd5;display:flex;justify-content:space-between;font-size:8.5pt;color:#9e9389}
+.pdf-sigs{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:16px}
+.pdf-sig{border-top:1px solid #c8c0b4;padding-top:7px;font-size:9pt;color:#9e9389}
+.pdf-tb{display:inline-block;padding:2px 7px;border-radius:10px;font-size:8pt;font-weight:600}
+.pdf-tb-s{background:#fef3c7;color:#92400e}.pdf-tb-sh{background:#d8f3dc;color:#2d6a4f}
+.pdf-tb-e{background:#dbeafe;color:#1a4f8a}.pdf-tb-p{background:#ede9fe;color:#5b21b6}
+
+@media(max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}.fr,.fr3{grid-template-columns:1fr}.main{padding:14px}.bar{padding:0 14px}.ev-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
+@media(max-width:460px){.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-left">
+    <div class="logo-zone" title="Click to upload school logo">
+      <div id="logoWrap"><div class="logo-ph">🏫</div></div>
+      <input type="file" class="logo-file" id="logoFile" accept="image/*" onchange="uploadLogo(this)">
+    </div>
+    <div class="bar-words">
+      <div class="bar-title">CAS Portfolio</div>
+      <div class="bar-hint" id="logoHint">Click to upload school logo</div>
+    </div>
+  </div>
+  <div class="bar-right">
+    <div class="sync-pill"><div class="dot" id="syncDot"></div><span id="syncTxt"></span></div>
+    <div class="rtog">
+      <button class="rtbtn on" id="btnS" onclick="switchRole('student')">Student</button>
+      <button class="rtbtn" id="btnT" onclick="switchRole('teacher')">Teacher</button>
+    </div>
+  </div>
+</div>
+
+<div id="root"></div>
+<div id="lightbox" class="lightbox" style="display:none" onclick="closeLightbox()">
+  <span class="lightbox-close" onclick="closeLightbox()">×</span>
+  <img id="lbImg" src="" alt="">
+  <div class="lightbox-name" id="lbName"></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════
+const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+// ══════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════
+const LOs=[
+  {id:'lo1',label:'LO1',title:'Strengths & Growth',        desc:'Identify own strengths and develop areas for personal growth.'},
+  {id:'lo2',label:'LO2',title:'Challenges & Skills',       desc:'Demonstrate challenges undertaken, developing new skills.'},
+  {id:'lo3',label:'LO3',title:'Initiative & Planning',     desc:'Demonstrate how to initiate and plan a CAS experience.'},
+  {id:'lo4',label:'LO4',title:'Commitment & Perseverance', desc:'Show commitment to and perseverance in CAS experiences.'},
+  {id:'lo5',label:'LO5',title:'Collaboration',             desc:'Demonstrate the skills and benefits of working collaboratively.'},
+  {id:'lo6',label:'LO6',title:'Global Significance',       desc:'Demonstrate engagement with issues of global significance.'},
+  {id:'lo7',label:'LO7',title:'Ethics & Choices',          desc:'Recognize and consider the ethics of choices and actions.'},
+];
+const ET={
+  single:  {label:'Single Experience',   los:['lo1','lo2'],                              y12:6,y13:4,bc:'b-single',  ptbc:'pdf-tb-s'},
+  short:   {label:'Short (8 weeks)',      los:['lo1','lo2','lo3','lo4','lo5'],           y12:2,y13:1,bc:'b-short',   ptbc:'pdf-tb-sh'},
+  extended:{label:'Extended (6 months)', los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:1,bc:'b-extended',ptbc:'pdf-tb-e'},
+  project: {label:'CAS Project',          los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:0,bc:'b-project', ptbc:'pdf-tb-p'},
+};
+
+// File type helpers
+const MIME_ICONS={
+  'image':'🖼️','video':'🎬',
+  'application/pdf':'📄',
+  'application/msword':'📝','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'📝',
+  'application/vnd.ms-powerpoint':'📊','application/vnd.openxmlformats-officedocument.presentationml.presentation':'📊',
+  'text/plain':'📄','default':'📎'
+};
+function fileIcon(mimeType){
+  if(!mimeType)return MIME_ICONS.default;
+  if(mimeType.startsWith('image/'))return MIME_ICONS['image'];
+  if(mimeType.startsWith('video/'))return MIME_ICONS['video'];
+  return MIME_ICONS[mimeType]||MIME_ICONS.default;
+}
+function isImage(mimeType){return mimeType&&mimeType.startsWith('image/')}
+function isVideo(mimeType){return mimeType&&mimeType.startsWith('video/')}
+function fmtSize(bytes){if(bytes<1024)return bytes+'B';if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';return(bytes/1048576).toFixed(1)+'MB'}
+
+// ══════════════════════════════════════════════════
+//  DUMMY DATA
+// ══════════════════════════════════════════════════
+const DUMMY={
+  classes:[
+    {id:'c1',name:'IB Year 12 — Class A (2024–25)'},
+    {id:'c2',name:'IB Year 13 — Class B (2024–25)'},
+  ],
+  students:[
+    {id:'s1',name:'Aisha Patel',   year:'Y12',classId:'c1'},
+    {id:'s2',name:'Marcus Chen',   year:'Y12',classId:'c1'},
+    {id:'s3',name:'Sofia Reyes',   year:'Y12',classId:'c1'},
+    {id:'s4',name:'James Okafor', year:'Y13',classId:'c2'},
+    {id:'s5',name:'Lena Kowalski',year:'Y13',classId:'c2'},
+    {id:'s6',name:'Noah Tanaka',  year:'Y13',classId:'c2'},
+  ],
+  experiences:{
+    s1:[
+      {id:'e1a',studentId:'s1',type:'single',year:'Y12',creativity:true,activity:false,service:false,name:'Photography Exhibition',what:'Organised and curated a student photography exhibition in the school gallery, liaising with 30 artists and external judges.',when:'Sep 2024',where:'School gallery',who:'Art dept',savedAt:'2024-09-20',files:[],status:'met',submittedAt:'2024-09-25',teacherFeedback:'',
+       los:{lo1:{met:true,reflection:'Identified my creative strength but needed to develop organisation skills significantly.',evidence:'Exhibition programme, email correspondence'},lo2:{met:true,reflection:'Learned professional photo editing and gallery curation — entirely new skills.',evidence:'Before/after gallery photos'}}},
+      {id:'e1b',studentId:'s1',type:'short',year:'Y12',creativity:false,activity:true,service:true,name:'Community Running Club',what:'Led weekly running sessions for local primary school children over 8 weeks, building fitness routines and encouraging healthy habits.',when:'Oct–Nov 2024',where:'School track',who:'Local primary students',savedAt:'2024-11-30',files:[],status:'pending',submittedAt:'2024-12-01',teacherFeedback:'',
+       los:{lo1:{met:true,reflection:'Discovered I am a natural motivator but needed to develop patience with younger children.',evidence:'Attendance register'},lo2:{met:true,reflection:'Learned basic coaching techniques and adapted sessions for mixed abilities.',evidence:'Session plans'},lo3:{met:true,reflection:'Planned all 8 sessions in advance, adjusting based on feedback.',evidence:'Planning document'},lo4:{met:true,reflection:'Maintained commitment through low attendance in week 3.',evidence:'Session logs'},lo5:{met:false,reflection:'Coordinating with parents proved more challenging than expected.',evidence:''}}},
+      {id:'e1c',studentId:'s1',type:'single',year:'Y12',creativity:true,activity:false,service:false,name:'School Magazine Article',what:'Wrote and edited a 1500-word feature article on climate action for the school magazine.',when:'Dec 2024',where:'School',who:'Magazine editorial team',savedAt:'2024-12-10',files:[],status:'feedback',submittedAt:'2024-12-12',teacherFeedback:'Good start Aisha — please add more detail to your LO2 reflection. How specifically did writing at this length develop your skills? Resubmit when updated.',
+       los:{lo1:{met:true,reflection:'Writing at this depth pushed my research and editorial skills.',evidence:'Published article'},lo2:{met:false,reflection:'Attempted to incorporate infographics but lacked the design skills to complete them.',evidence:''}}},
+    ],
+    s2:[
+      {id:'e2a',studentId:'s2',type:'extended',year:'Y12',creativity:false,activity:true,service:false,name:'Competitive Swimming Programme',what:'Trained with the regional squad, competing in three inter-school galas and achieving a PB in the 200m freestyle.',when:'Sep 2024–Feb 2025',where:'City aquatic centre',who:'Coach Williams, swim squad',savedAt:'2025-02-28',files:[],status:'met',submittedAt:'2025-03-01',teacherFeedback:'',
+       los:{lo1:{met:true,reflection:'Recognised my technical weakness in turns and worked specifically to improve them.',evidence:'Video analysis, race times'},lo2:{met:true,reflection:'Developed strength and conditioning training as a new discipline.',evidence:'Training log'},lo3:{met:true,reflection:'Set race targets each month and structured training to meet them.',evidence:'Season plan'},lo4:{met:true,reflection:'Maintained training through illness in November.',evidence:'Attendance log'},lo5:{met:true,reflection:'Team relay required genuine trust in teammates.',evidence:'Coach report'},lo6:{met:false,reflection:'Not yet addressed.',evidence:''},lo7:{met:false,reflection:'Not yet addressed.',evidence:''}}},
+    ],
+    s3:[
+      {id:'e3a',studentId:'s3',type:'project',year:'Y12',creativity:true,activity:false,service:true,name:'Plastic-Free Campus Campaign',what:'Led a school-wide campaign to eliminate single-use plastic: waste audit, petition, supplier negotiation with the canteen.',when:'Oct 2024–Jan 2025',where:'School campus',who:'Eco committee, 5 volunteers',savedAt:'2025-01-31',files:[],status:'met',submittedAt:'2025-02-02',teacherFeedback:'',
+       los:{lo1:{met:true,reflection:'My public speaking strength proved essential. Negotiation with adults was the biggest growth area.',evidence:'Campaign materials, slides'},lo2:{met:true,reflection:'Conducting a formal waste audit was a completely new skill.',evidence:'Waste audit report'},lo3:{met:true,reflection:'Mapped the entire 12-week campaign with a Gantt chart before starting.',evidence:'Project plan'},lo4:{met:true,reflection:'Kept the team motivated over three months despite slow institutional change.',evidence:'Meeting minutes'},lo5:{met:true,reflection:'Delegating to volunteers with different commitment levels was challenging but rewarding.',evidence:'Role assignments'},lo6:{met:true,reflection:'Connected local plastic reduction to global ocean health and SDG 14.',evidence:'Assembly presentation'},lo7:{met:true,reflection:'Researched greenwashing to ensure our campaign was evidence-based.',evidence:'Research notes'}}},
+    ],
+    s4:[
+      {id:'e4a',studentId:'s4',type:'extended',year:'Y13',creativity:false,activity:false,service:true,name:'Hospital Volunteer Programme',what:'Volunteered weekly at the paediatric ward of the regional hospital, supporting nursing staff and providing company to young patients.',when:'May–Oct 2024',where:'Regional General Hospital',who:'Ward Sister Davies',savedAt:'2024-10-31',files:[],status:'met',submittedAt:'2024-11-02',teacherFeedback:'',
+       los:{lo1:{met:true,reflection:'Active listening is a distinct skill requiring practice — I grew enormously here.',evidence:'Coordinator report, 120h log'},lo2:{met:true,reflection:'First-aid refresher training was a tangible new qualification.',evidence:'First aid certificate'},lo3:{met:true,reflection:'Arranged my own schedule around hospital shift patterns and school.',evidence:'Rota'},lo4:{met:true,reflection:'Continued volunteering through exam season — hardest test of commitment.',evidence:'Attendance log'},lo5:{met:true,reflection:'Working alongside medical professionals required understanding hierarchy and protocols.',evidence:'Supervisor feedback'},lo6:{met:true,reflection:'Connected paediatric healthcare access to global health equity issues.',evidence:'Reflective essay'},lo7:{met:true,reflection:'Navigated patient confidentiality and ethics of photographing children.',evidence:'Written reflection'}}},
+    ],
+    s5:[
+      {id:'e5a',studentId:'s5',type:'single',year:'Y13',creativity:false,activity:true,service:false,name:'Half Marathon Completion',what:'Trained for and completed the city half marathon, raising £600 for a local homeless shelter.',when:'Mar 2025',where:'City centre',who:'Running club',savedAt:'2025-03-16',files:[],status:'met',submittedAt:'2025-03-18',teacherFeedback:'',
+       los:{lo1:{met:true,reflection:'Discovered mental resilience I did not know I had when hitting "the wall" at km 16.',evidence:'Race medal, fundraising page'},lo2:{met:true,reflection:'Introduced interval training as a new technique to improve my time.',evidence:'Training plan'}}},
+      {id:'e5b',studentId:'s5',type:'short',year:'Y13',creativity:true,activity:false,service:false,name:'Short Film Production',what:'Wrote, directed and edited a 12-minute short film exploring identity, screened at the school arts festival.',when:'Jan–Mar 2025',where:'School & local locations',who:'Drama students, media tech',savedAt:'2025-03-22',files:[],
+       los:{lo1:{met:true,reflection:'Directing required confident decision-making under pressure — a new leadership context.',evidence:'Screened film, programme'},lo2:{met:true,reflection:'Learned cinematic lighting and colour grading in post-production.',evidence:'Film and BTS footage'},lo3:{met:true,reflection:'Storyboarded the entire film and produced a detailed shoot schedule.',evidence:'Storyboard'},lo4:{met:true,reflection:'Reshooting scenes twice due to technical issues tested patience and commitment.',evidence:'Revised cut comparison'},lo5:{met:false,reflection:'Coordinating a large cast was harder than anticipated.',evidence:''}}},
+    ],
+    s6:[
+      {id:'e6a',studentId:'s6',type:'extended',year:'Y13',creativity:false,activity:true,service:false,name:'Taekwondo Black Belt Preparation',what:'Trained six days a week towards a black belt grading, culminating in a successful grading in April 2025.',when:'Oct 2024–Apr 2025',where:'City Taekwondo Academy',who:'Master Park, training partners',savedAt:'2025-04-05',files:[],
+       los:{lo1:{met:true,reflection:'Discipline and perseverance emerged as core strengths through intensive training.',evidence:'Grading certificate, training log'},lo2:{met:true,reflection:'Added strength training, nutrition management and sparring as new disciplines.',evidence:'Training programme'},lo3:{met:true,reflection:'Structured a 6-month training schedule in consultation with my coach.',evidence:'Training plan'},lo4:{met:true,reflection:'Training six days a week while managing IB workload required exceptional commitment.',evidence:'Attendance log (180+ sessions)'},lo5:{met:true,reflection:'Sparring with partners of different skill levels required adapting my style.',evidence:'Coach assessment'},lo6:{met:false,reflection:'Plan to explore the global spread of martial arts for my next reflection.',evidence:''},lo7:{met:false,reflection:'Yet to formally reflect on competitive ethics and the spirit of martial arts.',evidence:''}}},
+    ],
+  }
+};
+
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let APP={
+  role:'student',
+  tab:'experiences',
+  studentScreen:'home',   // 'home' | 'lo-detail'
+  currentLoId:null,       // which LO is being drilled into
+  teacherTab:'classes',
+  teacherApprovalFilter:'all', // 'all'|'pending'
+  currentClassId:null,
+  currentStudentId:null,
+  teacherStuTab:'experiences',
+  logoUrl:null,
+  myStudentId:'s1',
+  // Data
+  students:[...DUMMY.students],
+  classes: [...DUMMY.classes],
+  experiences:JSON.parse(JSON.stringify(DUMMY.experiences)),
+  // Upload tracking: { expId: [{name, progress, done, error}] }
+  uploads:{},
+};
+
+// ══════════════════════════════════════════════════
+//  LOCAL STORAGE
+// ══════════════════════════════════════════════════
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+function saveAll(){
+  lsSet('cas_v5',{
+    students:APP.students,classes:APP.classes,
+    experiences:APP.experiences,logoUrl:APP.logoUrl,
+    myStudentId:APP.myStudentId
+  });
+}
+function loadAll(){
+  const d=lsGet('cas_v5');
+  if(d){
+    APP.students=d.students||APP.students;
+    APP.classes=d.classes||APP.classes;
+    APP.experiences=d.experiences||APP.experiences;
+    APP.logoUrl=d.logoUrl||null;
+    APP.myStudentId=d.myStudentId||APP.myStudentId;
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  LOGO
+// ══════════════════════════════════════════════════
+function uploadLogo(input){
+  const file=input.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=e=>{APP.logoUrl=e.target.result;saveAll();renderLogo()};
+  r.readAsDataURL(file);
+}
+function renderLogo(){
+  const w=document.getElementById('logoWrap'),h=document.getElementById('logoHint');
+  if(APP.logoUrl){
+    w.innerHTML=`<img src="${APP.logoUrl}" class="logo-img" alt="Logo">`;
+    if(h)h.style.display='none';
+  }else{
+    w.innerHTML=`<div class="logo-ph">🏫</div>`;
+    if(h)h.style.display='';
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════════
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function expsFor(sid){return APP.experiences[sid]||[]}
+function filesFor(sid,expId){
+  const e=(APP.experiences[sid]||[]).find(x=>x.id===expId);
+  return e?e.files||[]:[];
+}
+function losMet(exps){return LOs.map(lo=>exps.some(e=>(e.los||{})[lo.id]&&e.los[lo.id].met))}
+function strandBadges(e){return[e.creativity&&'<span class="badge b-c">Creativity</span>',e.activity&&'<span class="badge b-a">Activity</span>',e.service&&'<span class="badge b-s">Service</span>'].filter(Boolean).join('')}
+function loBadges(e){return LOs.map(lo=>{const d=(e.los||{})[lo.id];if(!d)return'';return`<span class="badge ${d.met?'b-met':'b-unmet'}">${lo.label}${d.met?' ✓':''}</span>`}).join('')}
+
+function dot(cls,txt){
+  const d=document.getElementById('syncDot'),t=document.getElementById('syncTxt');
+  if(d)d.className='dot '+cls;if(t)t.textContent=txt;
+}
+function setModal(html){
+  const o=document.getElementById('modal-overlay');if(o)o.remove();
+  if(!html)return;
+  const el=document.createElement('div');el.id='modal-overlay';el.className='overlay';
+  el.addEventListener('click',ev=>{if(ev.target===el)setModal(null)});
+  el.innerHTML=html;document.body.appendChild(el);
+}
+
+// ══════════════════════════════════════════════════
+//  GOOGLE DRIVE API
+// ══════════════════════════════════════════════════
+function configured(){return SCRIPT_URL&&SCRIPT_URL!=='YOUR_APPS_SCRIPT_URL_HERE'}
+
+async function apiCall(action,extra={}){
+  dot('busy','Saving…');
+  try{
+    const res=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action,...extra})});
+    const d=await res.json();
+    if(d.error){dot('err','Error');throw new Error(d.error)}
+    dot('ok','Synced');return d;
+  }catch(err){dot('err','Error');throw err}
+}
+
+// Read file as base64
+function readFileAsBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      // Strip the data URL prefix to get raw base64
+      const b64=e.target.result.split(',')[1];
+      res(b64);
+    };
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ══════════════════════════════════════════════════
+//  FILE UPLOAD HANDLER
+// ══════════════════════════════════════════════════
+async function handleFileUpload(files, sid, expId, loId){
+  if(!configured()){
+    alert('Connect to Google Sheets first to upload evidence files.\n\nAdd your Apps Script URL to the SCRIPT_URL constant in this file.');
+    return;
+  }
+
+  const MAX_MB=50;
+  const allowed=['image/','video/','application/pdf',
+    'application/msword','application/vnd.openxmlformats',
+    'application/vnd.ms-powerpoint','text/plain'];
+
+  for(const file of Array.from(files)){
+    // Validate type
+    const ok=allowed.some(t=>file.type.startsWith(t));
+    if(!ok){showToast(`Skipped "${file.name}" — unsupported file type.`,'err');continue}
+    // Validate size
+    if(file.size>MAX_MB*1024*1024){showToast(`"${file.name}" exceeds ${MAX_MB}MB limit.`,'err');continue}
+
+    // Register upload in progress tracker
+    if(!APP.uploads[expId])APP.uploads[expId]=[];
+    const upObj={id:uid(),name:file.name,progress:0,done:false,error:null};
+    APP.uploads[expId].push(upObj);
+    rerenderEvPanel(sid,expId); // show progress bar immediately
+
+    try{
+      // Simulate progress (actual upload is one shot — this gives user feedback)
+      const progressInterval=setInterval(()=>{
+        if(upObj.progress<85){upObj.progress+=15;rerenderEvPanel(sid,expId)}
+      },300);
+
+      const b64=await readFileAsBase64(file);
+      const result=await apiCall('uploadFile',{
+        studentId:sid,expId,loId:loId||'',
+        fileName:file.name,mimeType:file.type,base64Data:b64
+      });
+
+      clearInterval(progressInterval);
+      upObj.progress=100;upObj.done=true;
+
+      // Add file to local state
+      const expArr=APP.experiences[sid]||[];
+      const exp=expArr.find(e=>e.id===expId);
+      if(exp){
+        if(!exp.files)exp.files=[];
+        exp.files.push(result.file);
+        saveAll();
+      }
+      showToast(`"${file.name}" uploaded successfully.`,'ok');
+    }catch(err){
+      upObj.error=err.message;upObj.done=true;
+      showToast(`Upload failed: ${err.message}`,'err');
+    }
+
+    // Remove from upload queue after short delay
+    setTimeout(()=>{
+      APP.uploads[expId]=(APP.uploads[expId]||[]).filter(u=>u.id!==upObj.id);
+      rerenderEvPanel(sid,expId);
+    },2000);
+  }
+}
+
+async function deleteEvidenceFile(sid, expId, fileId){
+  if(!confirm('Delete this evidence file?'))return;
+  // Remove from local state
+  const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+  if(exp&&exp.files)exp.files=exp.files.filter(f=>f.id!==fileId);
+  saveAll();
+  rerenderEvPanel(sid,expId);
+  if(configured()){
+    try{await apiCall('deleteFile',{fileId})}
+    catch(err){showToast('Delete failed on server: '+err.message,'err')}
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  TOAST NOTIFICATION
+// ══════════════════════════════════════════════════
+function showToast(msg,type='ok'){
+  const t=document.createElement('div');
+  t.style.cssText=`position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    background:${type==='ok'?'#2d6a4f':'#991b1b'};color:#fff;padding:10px 20px;
+    border-radius:20px;font-size:14px;font-weight:500;z-index:9999;
+    box-shadow:0 4px 20px rgba(0,0,0,.25);white-space:nowrap;pointer-events:none`;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(),3500);
+}
+
+// ══════════════════════════════════════════════════
+//  EVIDENCE PANEL RENDERER
+// ══════════════════════════════════════════════════
+function rerenderEvPanel(sid, expId){
+  const panelId='ev-panel-'+expId;
+  const el=document.getElementById(panelId);
+  if(el){el.outerHTML=buildEvPanel(sid,expId)}
+  else render(); // fallback full re-render
+}
+
+function buildEvPanel(sid, expId, editable=true){
+  const files=filesFor(sid,expId);
+  const uploads=(APP.uploads[expId]||[]).filter(u=>!u.done);
+  const doneUploads=(APP.uploads[expId]||[]).filter(u=>u.done);
+  const totalFiles=files.length;
+
+  // Group files by loId ('' = general)
+  const grouped={};
+  files.forEach(f=>{
+    const k=f.loId||'';
+    if(!grouped[k])grouped[k]=[];
+    grouped[k].push(f);
+  });
+
+  const imgFiles=files.filter(f=>isImage(f.mimeType));
+  const docFiles=files.filter(f=>!isImage(f.mimeType));
+
+  let html=`<div class="ev-panel" id="ev-panel-${expId}">
+    <div class="ev-header">
+      <span class="ev-title">Evidence files</span>
+      <span class="ev-count">${totalFiles} file${totalFiles!==1?'s':''}</span>
+    </div>`;
+
+  // Upload progress bars
+  if(uploads.length||doneUploads.length){
+    html+=`<div style="margin-bottom:10px">`;
+    [...uploads,...doneUploads].forEach(u=>{
+      html+=`<div class="upload-item">
+        <span style="font-size:18px">${u.error?'❌':u.done?'✅':'⏳'}</span>
+        <span class="upload-name">${esc(u.name)}</span>
+        <div class="upload-bar-wrap"><div class="upload-bar" style="width:${u.progress}%"></div></div>
+        <span class="upload-pct">${u.error?'Failed':u.done?'Done':u.progress+'%'}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Image thumbnails
+  if(imgFiles.length){
+    html+=`<div class="ev-grid">`;
+    imgFiles.forEach(f=>{
+      const viewUrl=f.driveUrl||'#';
+      html+=`<div class="ev-thumb">
+        <a href="${esc(viewUrl)}" target="_blank" style="display:block;width:100%;height:100%">
+          <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--tx3)">🖼️</div>
+        </a>
+        <div class="ev-overlay">
+          <div class="ev-actions">
+            <a href="${esc(viewUrl)}" target="_blank" class="btn btn-sm" style="color:#fff;border-color:rgba(255,255,255,.5);background:rgba(0,0,0,.4)" title="Open in Drive">🔗</a>
+            ${editable?`<button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteEvidenceFile('${sid}','${expId}','${f.id}')" title="Delete">🗑</button>`:''}
+          </div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--tx3);text-align:center;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.fileName)}</div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Document / video files
+  if(docFiles.length){
+    html+=`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">`;
+    docFiles.forEach(f=>{
+      const icon=isVideo(f.mimeType)?'🎬':fileIcon(f.mimeType);
+      html+=`<div class="ev-doc">
+        <span class="ev-doc-icon">${icon}</span>
+        <div class="ev-doc-info">
+          <div class="ev-doc-name">${esc(f.fileName)}</div>
+          <div class="ev-doc-meta">${f.mimeType||'file'} · ${f.uploadedAt?new Date(f.uploadedAt).toLocaleDateString('en-GB'):''}</div>
+        </div>
+        <div class="ev-doc-actions">
+          <a href="${esc(f.driveUrl||'#')}" target="_blank" class="btn btn-xs" title="Open in Drive">Open ↗</a>
+          ${editable?`<button class="btn btn-xs btn-danger" onclick="event.stopPropagation();deleteEvidenceFile('${sid}','${expId}','${f.id}')" title="Delete">🗑</button>`:''}
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  if(!files.length&&!uploads.length){
+    html+=`<div style="font-size:13px;color:var(--tx3);margin-bottom:10px">No evidence files uploaded yet.</div>`;
+  }
+
+  // Drop zone (only for editable / student view)
+  if(editable){
+    html+=`<div class="ev-dropzone" id="dz-${expId}"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="this.classList.remove('drag-over');handleFileUpload(event.dataTransfer.files,'${sid}','${expId}','')">
+      <input type="file" multiple accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt"
+        onchange="handleFileUpload(this.files,'${sid}','${expId}','')">
+      <div class="ev-dropzone-icon">📎</div>
+      <div class="ev-dropzone-text">Drop files here or click to browse</div>
+      <div class="ev-dropzone-sub">Images, videos, PDFs, Word, PowerPoint · Max 50MB each</div>
+    </div>
+    ${!configured()?`<div style="font-size:12px;color:var(--amb);margin-top:6px;text-align:center">⚠️ Connect to Google Sheets to enable file uploads — see SETUP.md</div>`:''}`;
+  }
+
+  html+=`</div>`;
+  return html;
+}
+
+// ══════════════════════════════════════════════════
+//  LIGHTBOX
+// ══════════════════════════════════════════════════
+function openLightbox(url,name){
+  document.getElementById('lbImg').src=url;
+  document.getElementById('lbName').textContent=name;
+  document.getElementById('lightbox').style.display='flex';
+}
+function closeLightbox(){document.getElementById('lightbox').style.display='none'}
+
+// ══════════════════════════════════════════════════
+//  PORTFOLIO RENDERERS
+// ══════════════════════════════════════════════════
+function renderExpList(sid, editable){
+  const list=expsFor(sid);
+  if(!list.length)return`<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">No experiences yet</div><div>${editable?'Use "+ Add experience" to log your first one.':'No experiences logged yet.'}</div></div>`;
+  return`<div class="exp-list">${list.map(e=>{
+    const t=ET[e.type]||{};
+    const files=e.files||[];
+    const status=expStatus(e);
+    return`<div class="exp-card ${status==='feedback'?'style="border-left:4px solid #dc2626"':status==='pending'?'style="border-left:4px solid #f59e0b"':status==='met'?'style="border-left:4px solid #16a34a"':''}">
+      <div class="exp-body">
+        <div class="exp-h">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+              <div class="exp-name" style="margin-bottom:0">${esc(e.name)||'Untitled'}</div>
+              ${statusPill(status)}
+            </div>
+            <div class="exp-meta">${[e.when,e.where,e.who].filter(Boolean).map(esc).join(' · ')}</div>
+            <div class="exp-tags">
+              <span class="badge ${t.bc||''}">${t.label||e.type}</span>
+              <span class="badge b-unmet">${esc(e.year||'')}</span>
+              ${strandBadges(e)}
+              ${files.length?`<span class="badge" style="background:var(--blu-bg);color:var(--blu)">📎 ${files.length} file${files.length!==1?'s':''}</span>`:''}
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column;align-items:flex-end">
+            ${editable&&(status==='draft'||status==='feedback')?`<button class="btn btn-sm btn-p" onclick="submitForApproval('${sid}','${esc(e.id)}')">Submit for approval</button>`:''}
+            ${editable?`<div style="display:flex;gap:6px">
+              <button class="btn btn-sm" onclick="openEditExp('${esc(e.id)}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="delExp('${sid}','${esc(e.id)}')">Delete</button>
+            </div>`:''}
+          </div>
+        </div>
+        ${e.what?`<div class="exp-summary">${esc(e.what)}</div>`:''}
+        ${status==='feedback'&&e.teacherFeedback?`<div class="feedback-box" style="margin-top:10px"><div class="feedback-label">Teacher feedback</div>${esc(e.teacherFeedback)}</div>`:''}
+        <div class="exp-tags" style="margin-top:8px">${loBadges(e)}</div>
+      </div>
+      ${buildEvPanel(sid,e.id,editable)}
+    </div>`
+  }).join('')}</div>`
+}
+
+function renderLOsView(sid){
+  const list=expsFor(sid);
+  return`<div class="lo-grid">${LOs.map(lo=>{
+    const met=list.some(e=>(e.los||{})[lo.id]&&e.los[lo.id].met);
+    const rel=list.filter(e=>(e.los||{})[lo.id]);
+    return`<div class="lo-card ${met?'lo-met':''}">
+      <div class="lo-h">
+        <div class="lo-num ${met?'met':''}">${lo.label}</div>
+        <div style="flex:1"><div style="font-weight:600;font-size:14px">${lo.title}</div><div style="font-size:12px;color:var(--tx3)">${lo.desc}</div></div>
+        <span class="badge ${met?'b-met':'b-unmet'}" style="flex-shrink:0">${met?'Met':'Not yet'}</span>
+      </div>
+      ${rel.length?rel.map(e=>{
+        const d=e.los[lo.id];
+        const loFiles=(e.files||[]).filter(f=>f.loId===lo.id||(f.loId===''&&false));
+        const relFiles=(e.files||[]);
+        return`<div class="lo-entry">
+          <div style="font-weight:600;margin-bottom:3px">${esc(e.name)}</div>
+          ${d.reflection?`<div style="color:var(--tx2);margin-bottom:3px;font-style:italic">${esc(d.reflection)}</div>`:''}
+          ${d.evidence?`<div style="color:var(--tx3);font-size:12px;margin-bottom:5px">Notes: ${esc(d.evidence)}</div>`:''}
+          ${relFiles.length?`<div class="lo-entry-files">${relFiles.map(f=>`<a href="${esc(f.driveUrl||'#')}" target="_blank" class="lo-file-chip"><span class="chip-icon">${fileIcon(f.mimeType)}</span>${esc(f.fileName)}</a>`).join('')}</div>`:''}
+          <span class="badge ${d.met?'b-met':'b-unmet'}" style="margin-top:5px;display:inline-block">${d.met?'Met':'Not yet met'}</span>
+        </div>`
+      }).join(''):`<div style="font-size:13px;color:var(--tx3);padding:3px 0">No experiences linked to this outcome yet.</div>`}
+    </div>`
+  }).join('')}</div>`
+}
+
+function renderReqsView(sid){
+  const met=losMet(expsFor(sid));
+  const list=expsFor(sid);
+  const bty=(t,y)=>list.filter(e=>e.type===t&&e.year===y).length;
+  const rows=[
+    {label:'Single experiences',       type:'single',  y12:6,y13:4,note:'10 max per 18 months'},
+    {label:'Short experiences (8w)',    type:'short',   y12:2,y13:1,note:'2 per 18 months'},
+    {label:'Extended experiences (6m)',type:'extended',y12:1,y13:1,note:'1 per 18 months'},
+    {label:'CAS Project',              type:'project', y12:1,y13:0,note:'Complete before end Y12'},
+  ];
+  return`
+  <div class="card" style="margin-bottom:12px">
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:14px">Experience requirements</div>
+    <table class="rt"><thead><tr><th>Type</th><th>Y12 min</th><th>Y12 done</th><th>Y13 min</th><th>Y13 done</th><th>Note</th></tr></thead>
+    <tbody>${rows.map(r=>{
+      const y12d=bty(r.type,'Y12'),y13d=bty(r.type,'Y13');
+      const y12ok=y12d>=r.y12,y13ok=y13d>=r.y13||r.y13===0;
+      return`<tr><td><strong>${r.label}</strong></td><td>${r.y12}</td>
+        <td class="${y12ok?'rmet':'rno'}">${y12d} ${y12ok?'✓':'✗'}</td>
+        <td>${r.y13||'—'}</td>
+        <td class="${r.y13===0?'':y13ok?'rmet':'rno'}">${r.y13===0?'—':y13d+' '+(y13ok?'✓':'✗')}</td>
+        <td style="color:var(--tx3);font-size:12px">${r.note}</td></tr>`
+    }).join('')}</tbody></table>
+  </div>
+  <div class="card">
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:14px">Learning outcome coverage</div>
+    ${LOs.map((lo,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)">
+      <div class="lo-num ${met[i]?'met':''}" style="width:30px;height:30px;font-size:11px">${lo.label}</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:600">${lo.title}</div><div style="font-size:12px;color:var(--tx3)">${lo.desc}</div></div>
+      <span class="badge ${met[i]?'b-met':'b-unmet'}">${met[i]?'Met':'Not yet met'}</span>
+    </div>`).join('')}
+  </div>`
+}
+
+function portfolioStats(sid){
+  const list=expsFor(sid);const met=losMet(list);
+  const c={single:0,short:0,extended:0,project:0};
+  list.forEach(e=>{if(c[e.type]!==undefined)c[e.type]++});
+  return{list,met,c};
+}
+
+// ══════════════════════════════════════════════════
+//  ROLE SWITCH
+// ══════════════════════════════════════════════════
+function switchRole(r){
+  APP.role=r;
+  document.getElementById('btnS').classList.toggle('on',r==='student');
+  document.getElementById('btnT').classList.toggle('on',r==='teacher');
+  APP.tab='experiences';APP.currentClassId=null;APP.currentStudentId=null;
+  APP.studentScreen='home';APP.currentLoId=null;
+  render();
+}
+
+// ══════════════════════════════════════════════════
+//  APPROVAL HELPERS
+// ══════════════════════════════════════════════════
+function expStatus(e){return e.status||'draft'}
+function loMetApproved(sid){
+  const list=expsFor(sid);
+  return LOs.map(lo=>list.some(e=>expStatus(e)==='met'&&(e.los||{})[lo.id]&&e.los[lo.id].met));
+}
+function loMetCount(sid){
+  const list=expsFor(sid);
+  return LOs.map(lo=>list.filter(e=>expStatus(e)==='met'&&(e.los||{})[lo.id]&&e.los[lo.id].met).length);
+}
+function allPendingSubmissions(){
+  const result=[];
+  APP.students.forEach(s=>{
+    expsFor(s.id).forEach(e=>{if(expStatus(e)==='pending')result.push({student:s,exp:e})});
+  });
+  return result;
+}
+function statusPill(status){
+  const map={
+    draft:  '<span class="status-pill status-draft">✎ Draft</span>',
+    pending:'<span class="status-pill status-pending">⏳ Awaiting approval</span>',
+    feedback:'<span class="status-pill status-feedback">↩ Feedback received</span>',
+    met:    '<span class="status-pill status-met">✓ Met</span>',
+  };
+  return map[status]||map.draft;
+}
+
+function submitForApproval(sid,expId){
+  const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+  if(!exp)return;
+  exp.status='pending';exp.submittedAt=new Date().toISOString();
+  saveAll();render();
+  showToast('Submitted for teacher approval.','ok');
+  if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
+}
+
+// ══════════════════════════════════════════════════
+//  STUDENT VIEW — HOME (LO overview grid)
+// ══════════════════════════════════════════════════
+function renderStudentPicker(){
+  return`<div style="margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span style="font-size:13px;color:var(--tx2);font-weight:500">Viewing as:</span>
+    <select style="width:auto;padding:6px 12px;font-size:13px" onchange="APP.myStudentId=this.value;APP.studentScreen='home';APP.currentLoId=null;render()">
+      ${APP.students.map(s=>`<option value="${s.id}" ${s.id===APP.myStudentId?'selected':''}>${esc(s.name)} (${s.year})</option>`).join('')}
+    </select>
+    <span style="font-size:12px;color:var(--tx3)">(Demo — simulates a student signing in)</span>
+  </div>`
+}
+
+function renderStudentView(){
+  if(APP.studentScreen==='lo-detail'&&APP.currentLoId){renderLODetailScreen();return}
+  renderStudentHome();
+}
+
+function renderStudentHome(){
+  const sid=APP.myStudentId;
+  const stu=APP.students.find(s=>s.id===sid);
+  const list=expsFor(sid);
+  const metApproved=loMetApproved(sid);
+  const metCounts=loMetCount(sid);
+  const {c}=portfolioStats(sid);
+  const totalMet=metApproved.filter(Boolean).length;
+  const feedbackItems=list.filter(e=>expStatus(e)==='feedback');
+
+  document.getElementById('root').innerHTML=`
+  <div class="main">
+    ${renderStudentPicker()}
+    <div class="ptitle">
+      <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS 2017 · ${esc(stu?stu.name:'')}</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button>
+        <button class="btn btn-p" onclick="openAddExp('${sid}')">+ Add experience</button>
+      </div>
+    </div>
+
+    ${feedbackItems.length?`<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:var(--rl);padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:22px">↩</span>
+      <div>
+        <div style="font-weight:600;font-size:14px;color:#991b1b">${feedbackItems.length} experience${feedbackItems.length>1?'s have':' has'} received teacher feedback</div>
+        <div style="font-size:13px;color:var(--tx2)">Review feedback in the experience list and resubmit when ready.</div>
+      </div>
+    </div>`:''}
+
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:14px">Learning Outcomes — ${totalMet}/7 met</div>
+    <div class="lo-overview-grid">
+      ${LOs.map((lo,i)=>{
+        const met=metApproved[i];
+        const count=metCounts[i];
+        return`<div class="lo-ov-card ${met?'is-met':'not-met'}" onclick="openLODetail('${lo.id}')">
+          <div class="lo-ov-top">
+            <span class="lo-ov-label">${lo.label}</span>
+            <span class="lo-ov-pill ${met?'met':'unmet'}">${met?'MET':'NOT MET'}</span>
+          </div>
+          <div class="lo-ov-title">${lo.title}</div>
+          <div class="lo-ov-desc">${lo.desc}</div>
+          <div class="lo-ov-count"><span class="${met?'met-num':'unmet-num'}">${count}</span>approved experience${count!==1?'s':''}</div>
+          <div class="lo-ov-arrow">›</div>
+        </div>`
+      }).join('')}
+    </div>
+
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:14px;margin-top:4px">Experience summary</div>
+    <div class="stats" style="margin-bottom:28px">
+      <div class="sc"><div class="sl">Single</div><div class="sv">${c.single}</div></div>
+      <div class="sc"><div class="sl">Short</div><div class="sv">${c.short}</div></div>
+      <div class="sc"><div class="sl">Extended</div><div class="sv">${c.extended}</div></div>
+      <div class="sc"><div class="sl">Project</div><div class="sv">${c.project}</div></div>
+      <div class="sc hi"><div class="sl">LOs met</div><div class="sv">${totalMet}/7</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab ${APP.tab==='experiences'?'on':''}" onclick="APP.tab='experiences';render()">All Experiences</button>
+      <button class="tab ${APP.tab==='los'?'on':''}" onclick="APP.tab='los';render()">LO Detail</button>
+      <button class="tab ${APP.tab==='requirements'?'on':''}" onclick="APP.tab='requirements';render()">Requirements</button>
+    </div>
+    ${APP.tab==='experiences'  ? renderExpList(sid,true)  : ''}
+    ${APP.tab==='los'          ? renderLOsView(sid)        : ''}
+    ${APP.tab==='requirements' ? renderReqsView(sid)       : ''}
+  </div>`;
+}
+
+function openLODetail(loId){APP.studentScreen='lo-detail';APP.currentLoId=loId;render()}
+
+function renderLODetailScreen(){
+  const sid=APP.myStudentId;
+  const lo=LOs.find(l=>l.id===APP.currentLoId);
+  if(!lo){APP.studentScreen='home';render();return}
+  const list=expsFor(sid);
+  const metApproved=loMetApproved(sid);
+  const loIndex=LOs.indexOf(lo);
+  const isMet=metApproved[loIndex];
+  const linked=list.filter(e=>(e.los||{})[lo.id]);
+  const approvedMet=linked.filter(e=>expStatus(e)==='met'&&e.los[lo.id].met);
+  const reqData=Object.entries(ET).filter(([,v])=>v.los.includes(lo.id)).map(([type,v])=>{
+    const done=list.filter(e=>e.type===type&&expStatus(e)==='met'&&(e.los||{})[lo.id]&&e.los[lo.id].met).length;
+    return{type,label:v.label,done,ok:done>=1};
+  });
+
+  document.getElementById('root').innerHTML=`
+  <div class="main">
+    <div class="back-row">
+      <button class="btn" onclick="APP.studentScreen='home';APP.currentLoId=null;render()">← My Portfolio</button>
+    </div>
+    <div class="lo-detail-header">
+      <div class="lo-detail-badge ${isMet?'met':'unmet'}">${lo.label} — ${isMet?'MET':'NOT YET MET'}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px">${lo.title}</div>
+      <div style="font-size:14px;color:var(--tx2)">${lo.desc}</div>
+      ${isMet?`<div style="margin-top:10px;font-size:14px;color:#16a34a;font-weight:600">✓ ${approvedMet.length} approved experience${approvedMet.length!==1?'s address':' addresses'} this outcome.</div>`
+      :`<div style="margin-top:10px;font-size:14px;color:#dc2626">No approved experiences yet. Add an activity and submit for teacher approval.</div>`}
+    </div>
+
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:12px">Experience types that cover this LO</div>
+    <div class="lo-req-grid" style="margin-bottom:22px">
+      ${reqData.map(r=>`<div class="lo-req-card ${r.ok?'req-ok':''}">
+        <div class="lo-req-num">${r.done}</div>
+        <div class="lo-req-done">approved</div>
+        <div class="lo-req-label">${r.label}</div>
+      </div>`).join('')}
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <div style="font-family:'DM Serif Display',serif;font-size:16px">Activities for this outcome</div>
+      <button class="btn btn-p btn-sm" onclick="openAddExp('${sid}','${lo.id}')">+ Add activity for ${lo.label}</button>
+    </div>
+
+    ${linked.length?`<div style="display:flex;flex-direction:column;gap:10px">
+      ${linked.map(e=>{
+        const d=e.los[lo.id];const status=expStatus(e);
+        return`<div class="approval-card ${status==='pending'?'pending-card':status==='feedback'?'feedback-card':status==='met'?'met-card':''}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+                <span style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:600">${esc(e.name)}</span>
+                ${statusPill(status)}
+                <span class="badge ${ET[e.type]?.bc||''}">${ET[e.type]?.label||e.type}</span>
+              </div>
+              <div style="font-size:13px;color:var(--tx3)">${[e.when,e.where].filter(Boolean).map(esc).join(' · ')}</div>
+              ${d.reflection?`<div style="font-size:14px;color:var(--tx2);margin-top:8px;font-style:italic">"${esc(d.reflection)}"</div>`:''}
+              ${!d.met?'<div style="font-size:13px;color:#dc2626;margin-top:6px">LO not yet marked as met in this experience — edit to update.</div>':''}
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">
+              ${status==='draft'||status==='feedback'?`<button class="btn btn-sm btn-p" onclick="submitForApproval('${sid}','${e.id}')">Submit for approval</button>`:''}
+              ${status==='draft'||status==='feedback'?`<button class="btn btn-sm" onclick="openEditExp('${e.id}')">Edit</button>`:''}
+            </div>
+          </div>
+          ${status==='feedback'&&e.teacherFeedback?`<div class="feedback-box"><div class="feedback-label">Teacher feedback</div>${esc(e.teacherFeedback)}</div>`:''}
+          ${status==='pending'?`<div style="margin-top:10px;font-size:13px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:7px">⏳ Awaiting teacher review.</div>`:''}
+        </div>`
+      }).join('')}
+    </div>`:
+    `<div class="empty"><div class="empty-icon">📝</div><div class="empty-title">No activities for ${lo.label} yet</div><div>Add an experience and link it to this outcome.</div></div>`}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════
+//  TEACHER VIEWS
+// ══════════════════════════════════════════════════
+function renderTeacherView(){
+  if(APP.currentStudentId){renderTeacherStudent();return}
+  if(APP.currentClassId){renderTeacherClass();return}
+  renderTeacherHome();
+}
+
+function renderTeacherHome(){
+  const pending=allPendingSubmissions();
+  document.getElementById('root').innerHTML=`
+  <div class="main">
+    <div class="ptitle">
+      <div><div class="ph">Classes</div><div class="psub">IB CAS 2017</div></div>
+      <button class="btn btn-p" onclick="openAddClass()">+ New class</button>
+    </div>
+    <div class="tabs">
+      <button class="tab ${APP.teacherTab==='classes'?'on':''}" onclick="APP.teacherTab='classes';render()">Classes &amp; Students</button>
+      <button class="tab ${APP.teacherTab==='overview'?'on':''}" onclick="APP.teacherTab='overview';render()">Full Overview</button>
+      <button class="tab ${APP.teacherTab==='approvals'?'on':''}" onclick="APP.teacherTab='approvals';render()">
+        Approvals ${pending.length?`<span class="teacher-pending-badge">${pending.length}</span>`:''}
+      </button>
+    </div>
+    ${APP.teacherTab==='classes'?renderClassList():APP.teacherTab==='overview'?renderOverviewTable():renderApprovalsPanel()}
+  </div>`;
+}
+
+function renderApprovalsPanel(){
+  const pending=allPendingSubmissions();
+  if(!pending.length)return`<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">No pending submissions</div><div>Students will appear here when they submit experiences for approval.</div></div>`;
+  return`<div style="display:flex;flex-direction:column;gap:12px">
+    ${pending.map(({student,exp})=>{
+      const losCovered=Object.entries(exp.los||{}).filter(([,d])=>d.met).map(([k])=>{const lo=LOs.find(l=>l.id===k);return lo?lo.label:k}).join(', ');
+      return`<div class="approval-card pending-card">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+              <span style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:600">${esc(exp.name)}</span>
+              <span class="teacher-pending-badge">Pending review</span>
+              <span class="badge ${ET[exp.type]?.bc||''}">${ET[exp.type]?.label||exp.type}</span>
+            </div>
+            <div style="font-size:13px;color:var(--tx2);margin-bottom:4px"><strong>Student:</strong> ${esc(student.name)} · ${student.year}</div>
+            <div style="font-size:13px;color:var(--tx3)">${[exp.when,exp.where].filter(Boolean).map(esc).join(' · ')}</div>
+            ${exp.what?`<div style="font-size:13px;color:var(--tx2);margin-top:6px">${esc(exp.what)}</div>`:''}
+            ${losCovered?`<div style="font-size:13px;margin-top:6px"><strong>LOs claimed met:</strong> ${esc(losCovered)}</div>`:''}
+            <div style="font-size:12px;color:var(--tx3);margin-top:5px">Submitted: ${exp.submittedAt?new Date(exp.submittedAt).toLocaleDateString('en-GB'):''}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column">
+            <button class="btn btn-sm" style="background:#16a34a;color:#000;border-color:#16a34a" onclick="teacherMarkMet('${student.id}','${exp.id}')">✓ Mark as Met</button>
+            <button class="btn btn-sm" onclick="openTeacherFeedback('${student.id}','${exp.id}')">↩ Return with Feedback</button>
+          </div>
+        </div>
+      </div>`
+    }).join('')}
+  </div>`;
+}
+
+function teacherMarkMet(sid,expId){
+  const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+  if(!exp)return;
+  // Mark all LOs in this experience as met
+  Object.keys(exp.los||{}).forEach(k=>{exp.los[k].met=true});
+  exp.status='met';exp.teacherFeedback='';
+  saveAll();render();
+  showToast('Experience marked as met.','ok');
+  if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
+}
+
+function openTeacherFeedback(sid,expId){
+  const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+  const stu=APP.students.find(s=>s.id===sid);
+  if(!exp)return;
+  setModal(`<div class="modal">
+    <div class="modal-h">
+      <div class="modal-title">Return with feedback</div>
+      <button class="mclose" onclick="setModal(null)">×</button>
+    </div>
+    <div style="background:var(--surf2);border-radius:var(--r);padding:12px 14px;margin-bottom:16px">
+      <div style="font-weight:600;font-size:14px">${esc(exp.name)}</div>
+      <div style="font-size:13px;color:var(--tx3)">${esc(stu?stu.name:sid)}</div>
+    </div>
+    <div class="fg">
+      <label>Feedback for student</label>
+      <textarea id="teacherFbText" style="min-height:120px" placeholder="Explain what needs to be improved, what evidence is missing, or what reflections need expanding…">${esc(exp.teacherFeedback||'')}</textarea>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="setModal(null)">Cancel</button>
+      <button class="btn btn-p" onclick="submitTeacherFeedback('${sid}','${expId}')">Send feedback</button>
+    </div>
+  </div>`);
+}
+
+function submitTeacherFeedback(sid,expId){
+  const fb=document.getElementById('teacherFbText')?.value.trim();
+  if(!fb){alert('Please enter some feedback before sending.');return}
+  const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+  if(!exp)return;
+  exp.status='feedback';exp.teacherFeedback=fb;
+  saveAll();setModal(null);render();
+  showToast('Feedback sent to student.','ok');
+  if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
+}
+
+function renderClassList(){
+  if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">🏫</div><div class="empty-title">No classes yet</div></div>`;
+  return APP.classes.map(cls=>{
+    const studs=APP.students.filter(s=>s.classId===cls.id);
+    return`<div style="margin-bottom:18px">
+      <div class="cls-hdr">
+        <div><div class="cls-name">${esc(cls.name)}</div><div style="font-size:13px;color:var(--tx3)">${studs.length} student${studs.length!==1?'s':''}</div></div>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-sm" onclick="APP.currentClassId='${cls.id}';render()">View class →</button>
+          <button class="btn btn-sm btn-danger" onclick="delClass('${cls.id}')">Delete</button>
+        </div>
+      </div>
+      <div class="row-list">
+        ${studs.map(s=>{
+          const exps=expsFor(s.id);const met=losMet(exps);
+          const fileCount=exps.reduce((n,e)=>n+(e.files||[]).length,0);
+          return`<div class="r-row" onclick="APP.currentStudentId='${s.id}';APP.currentClassId='${cls.id}';APP.teacherStuTab='experiences';render()">
+            <div>
+              <div class="r-name">${esc(s.name)}</div>
+              <div class="r-meta">${s.year} · ${exps.length} exp · ${met.filter(Boolean).length}/7 LOs · ${fileCount} file${fileCount!==1?'s':''}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="lo-dots">${met.map(m=>`<div class="lo-dot ${m?'on':''}"></div>`).join('')}</div>
+              <span style="color:var(--tx3)">›</span>
+            </div>
+          </div>`
+        }).join('')}
+      </div>
+    </div>`
+  }).join('')
+}
+
+function renderOverviewTable(){
+  if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">No classes yet</div></div>`;
+  return`<div class="card ov-wrap"><table class="ov-table"><thead><tr>
+    <th>Student</th><th>Year</th><th>Single</th><th>Short</th><th>Ext.</th><th>Proj.</th><th>Files</th>
+    ${LOs.map(lo=>`<th>${lo.label}</th>`).join('')}
+  </tr></thead><tbody>
+  ${APP.classes.map(cls=>`
+    <tr class="cls-r"><td colspan="${7+LOs.length}">${esc(cls.name)}</td></tr>
+    ${APP.students.filter(s=>s.classId===cls.id).map(s=>{
+      const exps=expsFor(s.id);const met=losMet(exps);
+      const fc=exps.reduce((n,e)=>n+(e.files||[]).length,0);
+      return`<tr class="stu-r" onclick="APP.currentStudentId='${s.id}';APP.currentClassId='${cls.id}';APP.teacherStuTab='experiences';render()">
+        <td><strong>${esc(s.name)}</strong></td><td>${s.year}</td>
+        <td>${exps.filter(e=>e.type==='single').length}</td>
+        <td>${exps.filter(e=>e.type==='short').length}</td>
+        <td>${exps.filter(e=>e.type==='extended').length}</td>
+        <td>${exps.filter(e=>e.type==='project').length}</td>
+        <td>${fc}</td>
+        ${met.map(m=>`<td class="${m?'ov-y':'ov-n'}">${m?'✓':'·'}</td>`).join('')}
+      </tr>`
+    }).join('')}
+  `).join('')}
+  </tbody></table></div>`
+}
+
+function renderTeacherClass(){
+  const cls=APP.classes.find(c=>c.id===APP.currentClassId);
+  if(!cls){APP.currentClassId=null;render();return}
+  const studs=APP.students.filter(s=>s.classId===cls.id);
+  document.getElementById('root').innerHTML=`
+  <div class="main">
+    <div class="back-row">
+      <button class="btn" onclick="APP.currentClassId=null;render()">← Classes</button>
+      <div><div class="ph">${esc(cls.name)}</div><div class="psub">${studs.length} student${studs.length!==1?'s':''}</div></div>
+      <div style="margin-left:auto"><button class="btn btn-sm" onclick="openAddStudentToClass('${cls.id}')">+ Add student</button></div>
+    </div>
+    <div class="row-list">
+      ${studs.length?studs.map(s=>{
+        const exps=expsFor(s.id);const met=losMet(exps);
+        const fc=exps.reduce((n,e)=>n+(e.files||[]).length,0);
+        return`<div class="r-row" onclick="APP.currentStudentId='${s.id}';APP.teacherStuTab='experiences';render()">
+          <div>
+            <div class="r-name">${esc(s.name)}</div>
+            <div class="r-meta">${s.year} · ${exps.length} exp · ${met.filter(Boolean).length}/7 LOs · ${fc} file${fc!==1?'s':''}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="lo-dots">${met.map(m=>`<div class="lo-dot ${m?'on':''}"></div>`).join('')}</div>
+            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeFromClass('${s.id}')">Remove</button>
+            <span style="color:var(--tx3)">›</span>
+          </div>
+        </div>`
+      }).join(''):`<div class="empty"><div class="empty-icon">👥</div><div class="empty-title">No students yet</div></div>`}
+    </div>
+  </div>`;
+}
+
+function renderTeacherStudent(){
+  const stu=APP.students.find(s=>s.id===APP.currentStudentId);
+  if(!stu){APP.currentStudentId=null;render();return}
+  const cls=APP.classes.find(c=>c.id===APP.currentClassId)||APP.classes.find(c=>c.id===stu.classId);
+  const sid=stu.id;const {list,met,c}=portfolioStats(sid);
+  const fc=list.reduce((n,e)=>n+(e.files||[]).length,0);
+  document.getElementById('root').innerHTML=`
+  <div class="main">
+    <div class="back-row">
+      <button class="btn" onclick="APP.currentStudentId=null;render()">${cls?`← ${esc(cls.name)}`:'← Back'}</button>
+      <div><div class="ph">${esc(stu.name)}</div><div class="psub">${stu.year} · ${fc} evidence file${fc!==1?'s':''}</div></div>
+      <div style="margin-left:auto"><button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button></div>
+    </div>
+    <div class="stats">
+      <div class="sc"><div class="sl">Single</div><div class="sv">${c.single}</div></div>
+      <div class="sc"><div class="sl">Short</div><div class="sv">${c.short}</div></div>
+      <div class="sc"><div class="sl">Extended</div><div class="sv">${c.extended}</div></div>
+      <div class="sc"><div class="sl">Project</div><div class="sv">${c.project}</div></div>
+      <div class="sc hi"><div class="sl">LOs met</div><div class="sv">${met.filter(Boolean).length}/7</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tab ${APP.teacherStuTab==='experiences'?'on':''}" onclick="APP.teacherStuTab='experiences';render()">Experiences</button>
+      <button class="tab ${APP.teacherStuTab==='los'?'on':''}" onclick="APP.teacherStuTab='los';render()">Learning Outcomes</button>
+      <button class="tab ${APP.teacherStuTab==='requirements'?'on':''}" onclick="APP.teacherStuTab='requirements';render()">Requirements</button>
+    </div>
+    ${APP.teacherStuTab==='experiences'  ? renderExpList(sid,false) : ''}
+    ${APP.teacherStuTab==='los'          ? renderLOsView(sid)        : ''}
+    ${APP.teacherStuTab==='requirements' ? renderReqsView(sid)       : ''}
+  </div>`;
+}
+
+// ══════════════════════════════════════════════════
+//  MAIN RENDER
+// ══════════════════════════════════════════════════
+function render(){
+  if(APP.role==='student')renderStudentView();
+  else renderTeacherView();
+}
+
+// ══════════════════════════════════════════════════
+//  EXPERIENCE MODAL
+// ══════════════════════════════════════════════════
+let _editSid=null,_editEid=null,_focusLoId=null;
+
+function openAddExp(sid,focusLoId){_editSid=sid;_editEid=null;_focusLoId=focusLoId||null;buildExpModal()}
+function openEditExp(eid){
+  _focusLoId=null;
+  for(const[sid,exps] of Object.entries(APP.experiences)){
+    if(exps.find(e=>e.id===eid)){_editSid=sid;_editEid=eid;break}
+  }
+  buildExpModal();
+}
+
+function buildExpModal(){
+  const base=_editEid?(APP.experiences[_editSid]||[]).find(e=>e.id===_editEid):null;
+  const expType=(base&&base.type)||'single';
+  setModal(`<div class="modal">
+    <div class="modal-h">
+      <div class="modal-title">${base?'Edit experience':'Add CAS experience'}</div>
+      <button class="mclose" onclick="setModal(null)">×</button>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="msec">Type &amp; year</div>
+      <div class="fr">
+        <div class="fg"><label>Experience type</label>
+          <select id="mType" onchange="rebuildLOForms()">${Object.entries(ET).map(([k,v])=>`<option value="${k}" ${expType===k?'selected':''}>${v.label}</option>`).join('')}</select>
+        </div>
+        <div class="fg"><label>Academic year</label>
+          <select id="mYear">
+            <option value="Y12" ${base&&base.year==='Y12'?'selected':''}>Year 12</option>
+            <option value="Y13" ${base&&base.year==='Y13'?'selected':''}>Year 13</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label>CAS strands</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mC" ${base&&base.creativity?'checked':''}> Creativity</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mA" ${base&&base.activity?'checked':''}> Activity</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="mS" ${base&&base.service?'checked':''}> Service</label>
+        </div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="msec">Details</div>
+      <div class="fg"><label>Name</label><input type="text" id="mName" value="${esc(base&&base.name||'')}" placeholder="e.g. Weekly football coaching"></div>
+      <div class="fg"><label>What — describe the activity</label><textarea id="mWhat" placeholder="What did you do?">${esc(base&&base.what||'')}</textarea></div>
+      <div class="fr3">
+        <div class="fg"><label>When</label><input type="text" id="mWhen" value="${esc(base&&base.when||'')}" placeholder="Sep–Jan 2025"></div>
+        <div class="fg"><label>Where</label><input type="text" id="mWhere" value="${esc(base&&base.where||'')}" placeholder="Location"></div>
+        <div class="fg"><label>Who</label><input type="text" id="mWho" value="${esc(base&&base.who||'')}" placeholder="Collaborators"></div>
+      </div>
+    </div>
+    <div>
+      <div class="msec">Learning outcomes</div>
+      <div id="loForms">${buildLOForms(expType,base)}</div>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="setModal(null)">Cancel</button>
+      <button class="btn btn-p" id="saveExpBtn" onclick="saveExp()">Save experience</button>
+    </div>
+  </div>`);
+}
+
+function buildLOForms(expType,base){
+  return ET[expType].los.map(loId=>{
+    const lo=LOs.find(l=>l.id===loId);
+    const d=base?((base.los||{})[loId]||{}):{};
+    const highlight=_focusLoId===loId;
+    return`<div class="lo-fi" ${highlight?'style="border-color:var(--acc);background:#fdf0e8"':''}>
+      ${highlight?`<div style="font-size:12px;color:var(--acc);font-weight:700;margin-bottom:6px">⭐ Focus outcome for this activity</div>`:''}
+      <div class="lo-fi-h">
+        <div><div style="font-weight:600;font-size:13px">${lo.label}: ${lo.title}</div><div style="font-size:12px;color:var(--tx3)">${lo.desc}</div></div>
+        <label style="display:flex;align-items:center;gap:5px;font-size:13px;font-weight:500;color:var(--grn);cursor:pointer">
+          <input type="checkbox" id="lo_met_${loId}" ${(d.met||(highlight&&!base))?'checked':''}> Met
+        </label>
+      </div>
+      <div class="fg" style="margin-bottom:7px"><label>Reflection</label>
+        <textarea id="lo_ref_${loId}" style="min-height:60px" placeholder="How did you address this outcome?">${esc(d.reflection||'')}</textarea>
+      </div>
+      <div class="fg" style="margin-bottom:0"><label>Evidence notes (files can be uploaded after saving)</label>
+        <input type="text" id="lo_ev_${loId}" value="${esc(d.evidence||'')}" placeholder="Brief note — e.g. 'see attached photo'">
+      </div>
+    </div>`
+  }).join('')
+}
+
+function rebuildLOForms(){
+  document.getElementById('loForms').innerHTML=buildLOForms(document.getElementById('mType').value,null);
+}
+
+function saveExp(){
+  const btn=document.getElementById('saveExpBtn');if(btn)btn.disabled=true;
+  const type=document.getElementById('mType').value;
+  const los={};
+  ET[type].los.forEach(loId=>{
+    los[loId]={
+      met:document.getElementById('lo_met_'+loId)?.checked||false,
+      reflection:document.getElementById('lo_ref_'+loId)?.value.trim()||'',
+      evidence:document.getElementById('lo_ev_'+loId)?.value.trim()||'',
+    };
+  });
+  const existing=_editEid?(APP.experiences[_editSid]||[]).find(e=>e.id===_editEid):null;
+  const exp={
+    id:_editEid||uid(),studentId:_editSid,type,
+    year:document.getElementById('mYear').value,
+    creativity:document.getElementById('mC').checked,
+    activity:document.getElementById('mA').checked,
+    service:document.getElementById('mS').checked,
+    name:document.getElementById('mName').value.trim(),
+    what:document.getElementById('mWhat').value.trim(),
+    when:document.getElementById('mWhen').value.trim(),
+    where:document.getElementById('mWhere').value.trim(),
+    who:document.getElementById('mWho').value.trim(),
+    files:existing?existing.files||[]:[], // preserve existing files
+    status:existing?existing.status:'draft', // preserve status, new = draft
+    submittedAt:existing?existing.submittedAt:'',
+    teacherFeedback:existing?existing.teacherFeedback:'',
+    los,savedAt:new Date().toISOString(),
+  };
+  if(!APP.experiences[_editSid])APP.experiences[_editSid]=[];
+  const idx=APP.experiences[_editSid].findIndex(e=>e.id===exp.id);
+  if(idx>=0)APP.experiences[_editSid][idx]=exp;
+  else APP.experiences[_editSid].push(exp);
+  saveAll();setModal(null);
+  // If was on LO detail screen, go back there
+  if(APP.studentScreen==='lo-detail')render();
+  else render();
+  if(configured())apiCall('saveExperience',{exp}).catch(e=>console.warn(e));
+}
+
+function delExp(sid,eid){
+  if(!confirm('Delete this experience and all its evidence files?'))return;
+  APP.experiences[sid]=(APP.experiences[sid]||[]).filter(e=>e.id!==eid);
+  saveAll();render();
+  if(configured())apiCall('deleteExperience',{expId:eid}).catch(e=>console.warn(e));
+}
+
+// ══════════════════════════════════════════════════
+//  CLASS MODALS
+// ══════════════════════════════════════════════════
+function openAddClass(){
+  setModal(`<div class="modal" style="max-width:400px">
+    <div class="modal-h"><div class="modal-title">New class</div><button class="mclose" onclick="setModal(null)">×</button></div>
+    <div class="fg"><label>Class name</label><input type="text" id="clsName" placeholder="e.g. IB Year 12 — Class A"></div>
+    <div class="mfoot"><button class="btn" onclick="setModal(null)">Cancel</button><button class="btn btn-p" onclick="saveClass()">Create</button></div>
+  </div>`);
+  setTimeout(()=>document.getElementById('clsName')?.focus(),50);
+}
+function saveClass(){
+  const name=document.getElementById('clsName')?.value.trim();if(!name)return;
+  const id=uid();APP.classes.push({id,name});saveAll();setModal(null);render();
+}
+function delClass(classId){
+  if(!confirm('Delete this class?'))return;
+  APP.classes=APP.classes.filter(c=>c.id!==classId);
+  APP.students.forEach(s=>{if(s.classId===classId)s.classId=null});
+  saveAll();render();
+}
+
+function openAddStudentToClass(classId){
+  const unassigned=APP.students.filter(s=>s.classId!==classId);
+  setModal(`<div class="modal" style="max-width:420px">
+    <div class="modal-h"><div class="modal-title">Add student to class</div><button class="mclose" onclick="setModal(null)">×</button></div>
+    ${unassigned.length?`
+      <div class="fg"><label>Existing student</label>
+        <select id="stuSel">${unassigned.map(s=>`<option value="${s.id}">${esc(s.name)} (${s.year})</option>`).join('')}</select>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <button class="btn btn-sm" onclick="addToClass('${classId}')">Add selected</button>
+        <span style="font-size:13px;color:var(--tx3)">or</span>
+        <button class="btn btn-sm btn-p" onclick="openNewStudent('${classId}')">+ Create new student</button>
+      </div>`
+    :`<p style="font-size:14px;color:var(--tx2);margin-bottom:14px">All students are already in classes.</p>`}
+    <div class="mfoot"><button class="btn" onclick="setModal(null)">Cancel</button>${!unassigned.length?`<button class="btn btn-p" onclick="openNewStudent('${classId}')">+ New student</button>`:''}</div>
+  </div>`);
+}
+
+function addToClass(classId){
+  const sid=document.getElementById('stuSel')?.value;if(!sid)return;
+  const s=APP.students.find(x=>x.id===sid);if(s)s.classId=classId;
+  saveAll();setModal(null);render();
+}
+
+function removeFromClass(sid){
+  if(!confirm('Remove student from class?'))return;
+  const s=APP.students.find(x=>x.id===sid);if(s)s.classId=null;
+  saveAll();render();
+}
+
+function openNewStudent(classId){
+  setModal(`<div class="modal" style="max-width:400px">
+    <div class="modal-h"><div class="modal-title">New student</div><button class="mclose" onclick="setModal(null)">×</button></div>
+    <div class="fr">
+      <div class="fg"><label>Full name</label><input type="text" id="nStuName" placeholder="e.g. Aisha Patel"></div>
+      <div class="fg"><label>Year</label><select id="nStuYear"><option value="Y12">Year 12</option><option value="Y13">Year 13</option></select></div>
+    </div>
+    <div class="mfoot"><button class="btn" onclick="setModal(null)">Cancel</button><button class="btn btn-p" onclick="saveNewStudent('${classId}')">Add</button></div>
+  </div>`);
+  setTimeout(()=>document.getElementById('nStuName')?.focus(),50);
+}
+function saveNewStudent(classId){
+  const name=document.getElementById('nStuName')?.value.trim();
+  const year=document.getElementById('nStuYear')?.value;
+  if(!name)return;
+  const stu={id:uid(),name,year,classId};
+  APP.students.push(stu);
+  APP.experiences[stu.id]=[];
+  saveAll();setModal(null);render();
+}
+
+// ══════════════════════════════════════════════════
+//  PDF / PRINT
+// ══════════════════════════════════════════════════
+function printPDF(sid){
+  const stu=APP.students.find(s=>s.id===sid);if(!stu)return;
+  const list=expsFor(sid);
+  const met=losMet(list);
+  const c={single:0,short:0,extended:0,project:0};
+  list.forEach(e=>{if(c[e.type]!==undefined)c[e.type]++});
+  const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
+  const cls=APP.classes.find(cc=>cc.id===stu.classId);
+  const totalFiles=list.reduce((n,e)=>n+(e.files||[]).length,0);
+  const logoHtml=APP.logoUrl?`<img src="${APP.logoUrl}" class="pdf-logo" alt="Logo">`:`<div class="pdf-logo-ph">🏫</div>`;
+
+  const expRows=list.map(e=>{
+    const t=ET[e.type]||{};
+    const strands=[e.creativity&&'C',e.activity&&'A',e.service&&'S'].filter(Boolean).join(', ');
+    const metLOs=Object.entries(e.los||{}).filter(([,d])=>d.met).map(([k])=>k.replace('lo','LO')).join(', ');
+    const fc=(e.files||[]).length;
+    return`<tr>
+      <td><strong>${esc(e.name)}</strong><br><span style="color:#9e9389;font-size:8pt">${esc(e.when||'')}${e.where?' · '+esc(e.where):''}</span></td>
+      <td><span class="pdf-tb ${t.ptbc||''}">${t.label||e.type}</span></td>
+      <td>${esc(e.year||'')}</td>
+      <td>${esc(strands)}</td>
+      <td>${esc(metLOs)||'—'}</td>
+      <td>${fc?`📎 ${fc}`:'—'}</td>
+    </tr>`
+  }).join('');
+
+  const loItems=LOs.map((lo,i)=>{
+    const isMet=met[i];
+    const rel=list.filter(e=>(e.los||{})[lo.id]);
+    const best=rel.find(e=>e.los[lo.id].met&&e.los[lo.id].reflection)||rel.find(e=>e.los[lo.id].reflection);
+    const refl=best?best.los[lo.id].reflection:'';
+    const allFiles=rel.flatMap(e=>(e.files||[]));
+    return`<div class="pdf-lo-it ${isMet?'m':''}">
+      <div class="pdf-lo-hdr">
+        <span class="pdf-lo-tag ${isMet?'m':''}">${lo.label}</span>
+        <span class="pdf-lo-ttl">${lo.title}</span>
+        <span style="margin-left:auto;font-size:9pt;font-weight:600;color:${isMet?'#2d6a4f':'#991b1b'}">${isMet?'✓ Met':'Not yet met'}</span>
+      </div>
+      ${refl?`<div class="pdf-lo-ref">"${esc(refl)}"</div>`:'<div style="font-size:9pt;color:#9e9389;font-style:italic">No reflection recorded.</div>'}
+      ${allFiles.length?`<div class="pdf-lo-files">📎 ${allFiles.length} evidence file${allFiles.length!==1?'s':''} attached in Drive</div>`:''}
+    </div>`
+  }).join('');
+
+  const reqRows=[
+    {label:'Single experiences',       type:'single',  y12:6,y13:4},
+    {label:'Short (8 weeks)',           type:'short',   y12:2,y13:1},
+    {label:'Extended (6 months)',       type:'extended',y12:1,y13:1},
+    {label:'CAS Project',              type:'project', y12:1,y13:0},
+  ].map(r=>{
+    const y12d=list.filter(e=>e.type===r.type&&e.year==='Y12').length;
+    const y13d=list.filter(e=>e.type===r.type&&e.year==='Y13').length;
+    const y12ok=y12d>=r.y12,y13ok=y13d>=r.y13||r.y13===0;
+    return`<tr>
+      <td>${r.label}</td><td>${r.y12}</td>
+      <td class="${y12ok?'pdf-rmet':'pdf-rno'}">${y12d} ${y12ok?'✓':'✗'}</td>
+      <td>${r.y13||'—'}</td>
+      <td class="${r.y13===0?'':y13ok?'pdf-rmet':'pdf-rno'}">${r.y13===0?'—':y13d+' '+(y13ok?'✓':'✗')}</td>
+    </tr>`
+  }).join('');
+
+  const html=`<div class="pdf-wrap">
+    <div class="pdf-hdr">
+      ${logoHtml}
+      <div class="pdf-hdr-c"><div class="pdf-doc-title">CAS Review Document</div><div class="pdf-doc-sub">IB Creativity, Activity, Service — 2017 Syllabus</div></div>
+      <div class="pdf-hdr-r"><div><strong>Date:</strong> ${today}</div><div style="margin-top:4px"><strong>Class:</strong> ${esc(cls?cls.name:'—')}</div></div>
+    </div>
+    <div class="pdf-stu">
+      <div><div class="pdf-fl">Student name</div><div class="pdf-fv">${esc(stu.name)}</div></div>
+      <div><div class="pdf-fl">Year group</div><div class="pdf-fv">${esc(stu.year)}</div></div>
+      <div><div class="pdf-fl">Evidence files</div><div class="pdf-fv">${totalFiles} uploaded to Drive</div></div>
+    </div>
+    <div class="pdf-sec">Progress summary</div>
+    <div class="pdf-stats">
+      <div class="pdf-stat"><div class="pdf-stat-l">Single</div><div class="pdf-stat-v">${c.single}</div></div>
+      <div class="pdf-stat"><div class="pdf-stat-l">Short</div><div class="pdf-stat-v">${c.short}</div></div>
+      <div class="pdf-stat"><div class="pdf-stat-l">Extended</div><div class="pdf-stat-v">${c.extended}</div></div>
+      <div class="pdf-stat"><div class="pdf-stat-l">Project</div><div class="pdf-stat-v">${c.project}</div></div>
+      <div class="pdf-stat hi"><div class="pdf-stat-l">LOs met</div><div class="pdf-stat-v">${met.filter(Boolean).length}/7</div></div>
+    </div>
+    <div class="pdf-sec">Learning outcomes</div>
+    <div class="pdf-lo-grid">${loItems}</div>
+    <div class="pdf-sec">Experience log</div>
+    ${list.length?`<table class="pdf-exp-table">
+      <thead><tr><th>Experience</th><th>Type</th><th>Year</th><th>Strands</th><th>LOs met</th><th>Files</th></tr></thead>
+      <tbody>${expRows}</tbody>
+    </table>`:'<p style="font-size:10pt;color:#9e9389;font-style:italic">No experiences recorded.</p>'}
+    <div class="pdf-sec">Requirements check</div>
+    <table class="pdf-req-table">
+      <thead><tr><th>Type</th><th>Y12 min</th><th>Y12 done</th><th>Y13 min</th><th>Y13 done</th></tr></thead>
+      <tbody>${reqRows}</tbody>
+    </table>
+    <div class="pdf-sec">Review meeting notes</div>
+    <div class="pdf-nl">Supervisor notes / actions agreed:</div>
+    <div class="pdf-notes"></div>
+    <div class="pdf-sigs">
+      <div class="pdf-sig">Student signature &amp; date<br><br><br></div>
+      <div class="pdf-sig">CAS supervisor signature &amp; date<br><br><br></div>
+    </div>
+    <div class="pdf-foot"><span>CAS Portfolio Tracker · IB CAS 2017</span><span>Generated ${today}</span></div>
+  </div>`;
+
+  const win=window.open('','_blank','width=920,height=750');
+  // Extract PDF-specific CSS from the style block
+  const styleEl=document.querySelector('style');
+  const fullCss=styleEl?styleEl.textContent:'';
+  const pdfCssStart=fullCss.indexOf('/* ── PDF PRINT ──');
+  const pdfCss=pdfCssStart>=0?fullCss.slice(pdfCssStart):'';
+
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>CAS Review — ${esc(stu.name)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#fff;color:#1c1814;line-height:1.5}
+    ${pdfCss}
+    .print-bar{position:fixed;top:0;left:0;right:0;background:#1c1814;padding:10px 20px;display:flex;align-items:center;gap:10px;z-index:99}
+    .print-bar button{padding:8px 18px;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer}
+    .pb-p{background:#c45c2a;color:#fff}.pb-c{background:#f0ede6;color:#1c1814}
+    .print-bar-spacer{height:52px}
+    @media print{.print-bar,.print-bar-spacer{display:none}@page{margin:14mm 12mm}}
+  </style></head><body>
+  <div class="print-bar">
+    <button class="pb-p" onclick="window.print()">🖨 Print / Save as PDF</button>
+    <button class="pb-c" onclick="window.close()">Close</button>
+    <span style="color:rgba(255,255,255,.6);font-size:13px">In Chrome: choose "Save as PDF" as the printer</span>
+  </div>
+  <div class="print-bar-spacer"></div>
+  ${html}
+  </body></html>`);
+  win.document.close();
+}
+
+// ══════════════════════════════════════════════════
+//  BOOT
+// ══════════════════════════════════════════════════
+function boot(){
+  loadAll();renderLogo();render();
+  if(configured()){
+    dot('busy','Connecting…');
+    fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'ping'})})
+      .then(r=>r.json())
+      .then(()=>dot('ok','Connected'))
+      .catch(()=>dot('err','Offline — local data only'));
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
