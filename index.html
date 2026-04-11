@@ -1,3 +1,379 @@
+
+
+CAS presentation folder .pptx
+pptx
+
+Can you create a version of this in a suitable format that is easy for students and teachers to use. Students should be able to add evidence and respond to lo's throughout the year. There should be persistent storage of the information and also the ability to view the data for each student in a common format. This does not have to be a web app.
+
+Apr 1
+
+Viewed a file, ran a command
+Viewed a file, ran a command
+Now I have a thorough understanding of the CAS portfolio structure. Let me build a comprehensive React artifact with AI-powered features and persistent storage.
+
+Now I have everything I need. Let me build a comprehensive CAS Portfolio React artifact with persistent storage.
+
+V
+
+Connecting to visualize...
+Here's your CAS Portfolio tracker. It's fully self-contained and runs in the browser with persistent storage (localStorage), so data survives page refreshes and future sessions.
+
+How it works:
+
+Student view — students use the dropdown to stay in Student mode. They can:
+
+Add experiences (Single, Short 8-week, Extended 6-month, or CAS Project)
+Fill in the What / When / Where / Who summary
+Tick the relevant CAS strands (Creativity, Activity, Service)
+Write reflections and evidence for each Learning Outcome that applies
+Mark LOs as Met
+View their LO coverage and requirements check at a glance
+Teacher view — switch to Teacher mode to:
+
+Add students and assign them to Year 12 or 13
+Click any student to see their full portfolio (read-only)
+Use the Class Overview tab for a grid showing every student's experience counts and LO completion at a glance
+A few things to note:
+
+The current build uses browser localStorage, which means data is stored per-device. For a genuinely shared multi-student system you'd want a backend or Google Sheets integration — but for a classroom where each student uses their own device (and the teacher has their own), this works well as-is.
+
+If you'd like to extend it — for example adding a shared Google Sheets export, an evidence file link field, or a teacher comment/approval system — just let me know and I can build that in.
+
+ok can you build and share
+
+Apr 2
+Let me build this as a proper standalone HTML file that can be distributed to students and teachers.
+
+
+Viewed a file, created a file, ran a command
+Viewed a file, created a file, ran a command
+Here's the standalone file — a single cas_portfolio.html that anyone can open directly in a browser with no installation needed.
+
+How to distribute it:
+
+Students — share the file via Google Drive, Teams, or your VLE. Each student opens it on their own device and their data saves automatically via localStorage (persists across sessions on that browser/device).
+Teacher — keep your own copy, switch to Teacher mode, and add each student's name. You can then view their portfolio structure, but note that since each student's data lives in their own browser, you'd need students to bring their device to you — or see the note below.
+One important limitation to know: because localStorage is per-device/per-browser, student data doesn't automatically sync to the teacher's copy. There are a few practical workarounds:
+
+Shared device — if students use school Chromebooks/computers with the same browser profile, data persists there and a teacher can view it on the same machine.
+Export feature — I can add a one-click "Export my data as JSON" button and a teacher-side "Import student data" button, which would let students submit their portfolio as a file at any point.
+Google Sheets backend — I can wire the app to a Google Apps Script endpoint so all data syncs to a shared spreadsheet automatically.
+Would you like me to add the export/import feature, or go the Google Sheets route?
+
+Cas portfolio
+Code · HTML 
+google sheets backend
+
+Apr 2
+Let me set this up properly. You'll need two things: a Google Apps Script (the backend) and an updated HTML file (the frontend).
+
+
+Created 2 files, viewed a file
+Created 2 files, viewed a file
+Now build the updated HTML with the Google Sheets API layer:
+
+
+Created 2 files, ran 2 commands, read a file
+Created 2 files, ran 2 commands, read a file
+Here are your three files. Here's what each one does and the order to tackle them:
+
+SETUP.md — read this first. It walks you through every step.
+
+Code.gs — the Google Apps Script backend. Paste this into your Sheet's Apps Script editor. It creates three tabs automatically (Students, Experiences, LO_Entries) and handles all the read/write operations.
+
+cas_portfolio.html — the app. Once you've deployed the Apps Script and have your URL, open this in a text editor and replace YOUR_APPS_SCRIPT_URL_HERE with it. Then share the file with students.
+
+How it all works once running:
+
+Students open the HTML file in any browser and switch to Student mode — their data saves to the sheet automatically as they type
+You open the same file in Teacher mode — it fetches all students and their portfolios live from the sheet
+The sync status dot in the top-right shows green when connected, amber when saving, red if there's a problem
+Everything also caches locally, so if a student loses internet mid-session their work isn't lost — it'll sync next time they're connected
+The Google Sheet stays fully readable as plain data, so you can filter/sort/export it directly if needed for reporting
+The whole setup takes about 10 minutes. The trickiest part is the Apps Script deployment — SETUP.md has screenshots-level detail for that step. Let me know if you hit any snags.
+
+Cas portfolio
+Code · HTML 
+Code
+GS 
+Setup
+Document · MD 
+i need it so students and teachers can sign in and then they are provided with the correct view. Student can view only their entires. Teachers can see each class and then see the students in each class and also drill down to their data.
+
+Apr 2
+Let me plan this out properly before building. The key addition is authentication + class management, so I need to think through the data model first.
+
+
+Check Code.gs for current data model
+Check Code.gs for current data model
+Good. Now I have the full picture. I need to design a new data model with: Users (email + PIN + role), Classes, ClassMembers (linking students to classes), then rebuild both files completely.
+
+
+Created 2 files, ran a command
+Created 2 files, ran a command
+Now the full frontend with auth + all views:
+
+
+Created 2 files, ran a command, read a file
+Created 2 files, ran a command, read a file
+Here's what's been completely rebuilt across all three files.
+
+What's new in this version:
+
+Authentication — sign in / register screen on first load. Sessions persist (12-hour tokens stored server-side in Apps Script Properties). Students and teachers each get the correct view automatically based on their role.
+
+Role-based access — the backend enforces this server-side, not just in the UI. A student's token cannot fetch another student's portfolio, and teacher-only actions (class management, user management) are rejected if called with a student token.
+
+Teacher flow:
+
+Classes view — see all your classes, with a preview of students and their LO progress dots
+Class detail — full student list for a class, add/remove students, click through to any student's portfolio
+Full Overview tab — the cross-class grid showing every student's experience counts and LO coverage at a glance
+Manage users — create, edit and delete student and teacher accounts (set name, email, role, PIN)
+Student flow — identical to before, but now gated behind login. They only ever see their own data.
+
+Account setup flow — the very first teacher can self-register. After that, all accounts are created by a teacher via Manage Users, which means you control who gets in (useful for a school setting where you want students using their school email). SETUP.md covers both approaches.
+
+The Google Sheet now has five tabs: Users, Classes, ClassMembers, Experiences, LO_Entries.
+
+Cas portfolio
+Code · HTML 
+Code
+GS 
+Setup
+Document · MD 
+Can you remove the authorization an Tebet back to the previous version. Can you also add an image place holder in the header of the webpage so I can upload an image. Also can you populate with some dummy students around 5 or 6 in two different classes also add some testing data for each student with regards to a mixture of experiences and also some lo’s. Also provide an option to print a template showing their progress so far as a pdf that can be used in review meetings with students.
+
+Apr 2
+
+Read the previous version of the HTML to use as base
+Read the previous version of the HTML to use as base
+Good — let me build this fresh from the v1 (no-auth) base, adding logo upload, dummy data, class management, and PDF print template.
+
+
+Ran 2 commands, created a file, read a file
+Ran 2 commands, created a file, read a file
+Here's the updated file — single HTML, open in any browser, no login needed.
+
+What's changed and been added:
+
+School logo — the top-left corner has a dashed 🏫 placeholder. Click it to upload any image (PNG, JPG, SVG). It persists in local storage and appears on all printed PDFs automatically.
+
+No authentication — back to the simple role toggle (Student / Teacher) in the top-right.
+
+Student demo mode — since there's no login, the student view has a dropdown at the top so anyone can pick which student they're "viewing as". In a real deployment you'd replace this with a simple name/PIN lookup, but it works perfectly for demo and review purposes.
+
+Dummy data — 2 classes, 6 students:
+
+IB Year 12 — Class A: Aisha Patel, Marcus Chen, Sofia Reyes — mix of single, short, extended and project experiences, some LOs met, some still in progress
+IB Year 13 — Class B: James Okafor, Lena Kowalski, Noah Tanaka — richer portfolios reflecting a year's more experience, with detailed reflections and evidence entries
+Print / PDF button — appears both in Student view and when a teacher drills into a student. It opens a print-ready page in a new tab with:
+
+School logo (if uploaded), student name, class, date
+Progress summary stats
+All 7 LOs with met/not-yet status and the best reflection quote for each
+Full experience log table
+Requirements check grid (Y12/Y13 counts vs minimums)
+Blank review notes section and signature lines for the meeting
+Hit Print / Save PDF in the new tab — in Chrome/Edge you can choose "Save as PDF" as the printer destination to get a clean document for the review folder.
+
+Cas portfolio
+Code · HTML 
+students should be able to upload / attach files as evidence. These will be image files, video files of PDF / Documents
+
+Apr 3
+This is a meaningful architectural decision before building. File storage options:
+
+Good choice. I'll build Google Drive file upload via Apps Script — files go into a structured folder per student, and the app stores the Drive links against each LO evidence entry. This means both the updated Code.gs and cas_portfolio.html need rebuilding.
+
+
+Viewed 2 files
+Viewed 2 files
+Good, I have the full picture. Now I'll write the updated Code.gs with Drive upload support, and update the HTML with a proper evidence file manager panel.
+
+
+Ran a command, created a file
+Ran a command, created a file
+Now the main HTML — I'll add a full evidence file manager panel inside each experience, with upload UI, file type icons, thumbnail previews for images, and progress indicators:
+
+
+Created a file, ran a command, read a file
+Created a file, ran a command, read a file
+Both files updated. Here's exactly how the evidence upload system works:
+
+For students — uploading files: Every experience card now has an evidence panel at the bottom. Students can drag and drop files directly onto it, or click "browse" to pick from their device. Accepted types are images (JPG, PNG, GIF, WebP), videos (MP4, MOV etc.), PDFs, Word documents, and PowerPoint files — up to 50MB each. A progress bar appears during upload. Once uploaded, files live permanently in Google Drive.
+
+How files are organised in Drive: The Apps Script creates a CAS Portfolio Evidence folder in your Google Drive automatically. Inside, each student gets their own subfolder (named with their ID and name). All their evidence files go in there, organised by when they were uploaded. The sheet's EvidenceFiles tab records every file with its Drive URL, student, experience, and LO it relates to.
+
+What teachers see: The experience cards in teacher view show a file count badge and list all files in read-only mode (open links to Drive, but can't delete). The Class Overview table now has a "Files" column. The PDF print document notes how many evidence files are attached in Drive per LO.
+
+Key setup note for file uploads: The setupSheets() function now also creates the Drive folder automatically. Make sure when you deploy the Apps Script you select Execute as: Me — this is what gives the script permission to write to your Drive on behalf of the school account. Students don't need any Google sign-in; the files are uploaded through your credentials server-side.
+
+Cas portfolio
+Code · HTML 
+Code
+GS 
+Also on the student screen have the overview for each activity a box with met / not met in green and red with black font. Then when clicking on each one it takes to a screen that shows the number of tasks required for each activity. Athena can then add an activity which can then be marked as send for approve to the teacher who can then check the submission and return with feedback or mark as met. Once met a en. Kng total is kept for each activity to be displayed on the screen mentioned at the start. Keep all othwr features
+
+Apr 3
+Let me read the current file thoroughly before making any changes.
+
+
+Viewed 3 files
+Viewed 3 files
+Good, I have the full picture. Now let me plan the additions clearly before writing:
+
+New features needed:
+
+LO overview grid on the student home screen — 7 cards, each showing Met (green) / Not met (red) with black text, clickable
+LO detail screen — shows required count per experience type for that LO, lists existing linked experiences, and lets student add a new experience activity linked to that LO
+Approval workflow — experience activities can be "submitted for approval", teacher sees pending submissions, can return with feedback or mark as met
+Running total — met count displayed on the overview grid cards
+
+Backup current file before major edit
+Backup current file before major edit
+Now I'll add the new CSS and JavaScript sections via targeted insertions:
+
+
+Add LO overview grid, approval workflow CSS after the existing misc card styles
+Add LO overview grid, approval workflow CSS after the existing misc card styles
+Now add the approval workflow data into the dummy data and state:
+
+
+Extend dummy data experiences with status field and add some approval dummy entries
+Extend dummy data experiences with status field and add some approval dummy entries
+Now add the currentLoId to APP state and the new LO navigation state:
+
+
+Add currentLoId and studentScreen to APP state
+Add currentLoId and studentScreen to APP state
+Now replace the entire renderStudentView function and add all the new functions:
+
+
+Edited 2 files, viewed 2 files
+Edited 2 files, viewed 2 files
+Now add the teacher approval panel into renderTeacherHome and a review modal:
+
+
+Add approval tab to teacher home and pending count badge
+Add approval tab to teacher home and pending count badge
+Now add the approvals panel function and teacher review modal, right before the renderClassList function:
+
+
+Add renderApprovalsPanel and openTeacherReview functions before renderClassList
+Add renderApprovalsPanel and openTeacherReview functions before renderClassList
+Now update openAddExp to accept an optional focusLoId parameter and pre-tick that LO:
+
+
+Update openAddExp and buildExpModal to accept optional focusLoId
+Update openAddExp and buildExpModal to accept optional focusLoId
+Now update buildLOForms to highlight the focused LO, and update saveExp to include status:'draft':
+
+
+Edited 2 files, ran a command, viewed a file
+Edited 2 files, ran a command, viewed a file
+Now also add status pill rendering into the renderExpList function so the status shows on each card:
+
+
+Add status pill and submit button to experience cards in renderExpList
+Add status pill and submit button to experience cards in renderExpList
+Also fix the switchRole to reset the student screen state:
+
+
+Fix switchRole to reset studentScreen
+Fix switchRole to reset studentScreen
+Let me copy what we have and present it:
+
+Continue
+
+Apr 4
+
+Ran 2 commands
+Ran 2 commands
+Good — no syntax errors. Let me also quickly verify the key new functions all exist:
+
+
+Verify all new functions exist
+Verify all new functions exist
+All functions present. Now copy the updated Code.gs too since we need the status, submittedAt, and teacherFeedback columns added to it:
+
+
+Ran 4 commands, read a file
+Ran 4 commands, read a file
+Both files updated. Here's what's new:
+
+Student home screen — LO overview grid The seven LOs now appear as clickable cards at the top of the student view. Each card shows the LO label, title, description, and a bold MET (green) or NOT MET (red) pill with black text. Below the pill is a running total of how many approved experiences address that outcome. Only experiences the teacher has formally marked as Met count towards this total — pending or draft entries don't.
+
+LO detail screen Clicking any LO card drills into a dedicated screen showing the experience types that cover it (with a count of how many have been approved), and a list of every activity the student has linked to that outcome. From here students can add a new activity directly (the relevant LO is highlighted and pre-ticked in the form), edit drafts, or hit "Submit for approval" to send to the teacher.
+
+Approval workflow — four statuses
+
+Draft — saved but not yet submitted (grey pill)
+Awaiting approval — submitted, teacher yet to review (amber, left border stripe)
+Feedback received — teacher returned it with comments (red, feedback box shown inline)
+Met — teacher approved (green)
+A feedback alert banner appears on the student home screen whenever any of their experiences have been returned.
+
+Teacher — Approvals tab The teacher home now has a third tab, "Approvals", with a badge showing the pending count. Each submission shows the student name, experience details, which LOs they've claimed as met, and two actions: "Mark as Met" (one click, sets status and marks all claimed LOs as met) or "Return with Feedback" (opens a modal to type comments, which appear inline on the student's screen).
+
+Code.gs has been updated to persist the three new fields (status, submittedAt, teacherFeedback) alongside each experience row in the sheet.
+
+Cas portfolio
+Code · HTML 
+Code
+GS 
+1775902296362_image.png
+details of experiences etc should only be viewable when clicking on the lo box in the top half of this page.
+
+5:12 PM
+So the bottom half of the student home — the tabs, stats, and experience list — should be removed entirely. The LO grid is the only entry point. Clicking an LO card goes to the detail screen which already has everything. Let me make that change cleanly.
+
+
+Ran a command, viewed a file, edited a file
+Ran a command, viewed a file, edited a file
+Now update the LO detail screen to include the full experience list, LO detail view, and requirements — since that's now the only place students can see their work:
+
+
+Read current renderLODetailScreen
+Read current renderLODetailScreen
+Now I'll replace the LO detail screen with a richer version that includes tabs for activities, all experiences, and requirements:
+
+
+Viewed a file, edited a file
+Viewed a file, edited a file
+Now add loDetailTab to the APP state initialisation:
+
+
+Add loDetailTab to APP state
+Add loDetailTab to APP state
+Also reset loDetailTab when switching students or roles:
+
+
+Ran 2 commands, edited a file, read a file
+Ran 2 commands, edited a file, read a file
+The student home screen now shows only the LO overview grid — nothing else. Here's how the updated flow works:
+
+Student home — four compact summary figures at the top (total experiences, evidence files, pending reviews, LOs met), then the 7 LO cards. That's it. No tabs, no experience list, no details visible on this screen.
+
+Clicking an LO card takes you to the LO detail screen, which has three tabs:
+
+Activities for LOx — shows only experiences linked to that specific LO, each displayed as a full card with: experience name + status pill, type/year/strand badges, the What description, a highlighted reflection block for that LO specifically, any evidence file chips, teacher feedback (if returned), and a coloured confirmation strip when approved. Submit, Edit and Delete buttons are on each card. Evidence file upload is available for draft/feedback-status activities. Approved activities show a locked read-only view.
+All experiences — the complete experience list with all evidence panels, exactly as before, so students can still manage everything from within an LO context.
+Requirements — the Y12/Y13 count table and LO coverage grid.
+LO navigation arrows (‹ LO2 / LO3 ›) let students move between outcomes without going back to the home screen each time. The feedback alert banner on the home screen is now clickable and routes straight to the relevant LO card.
+
+Cas portfolio
+Code · HTML 
+
+You've used 90% of your session limit
+Upgrade
+
+
+
+Claude is AI and can make mistakes. Please double-check responses.
+Cas portfolio · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,7 +398,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:15px;line-height:1.6;min-height:100vh}
-
+ 
 /* ── TOPBAR ── */
 .bar{background:var(--surf);border-bottom:1px solid var(--bdr);padding:0 24px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:var(--sh)}
 .bar-left{display:flex;align-items:center;gap:14px}
@@ -43,10 +419,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-
 .rtog{display:flex;background:var(--surf2);border-radius:8px;padding:3px;gap:2px}
 .rtbtn{padding:5px 14px;border:none;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--tx2);transition:all .15s}
 .rtbtn.on{background:var(--surf);color:var(--acc);box-shadow:0 1px 3px rgba(0,0,0,.1)}
-
+ 
 /* ── LAYOUT ── */
 .main{max-width:1080px;margin:0 auto;padding:28px 20px}
-
+ 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;border:1px solid var(--bdr);background:var(--surf);color:var(--tx);transition:all .15s}
 .btn:hover{background:var(--surf2);border-color:var(--bdr2)}
@@ -59,7 +435,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-
 .btn-danger:hover{background:#fecaca}
 .btn-ghost{border-color:transparent;background:transparent;color:var(--tx2)}
 .btn-ghost:hover{background:var(--surf2);color:var(--tx)}
-
+ 
 /* ── FORMS ── */
 .fg{margin-bottom:14px}
 .fg label{display:block;font-size:12px;font-weight:600;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
@@ -69,13 +445,13 @@ textarea{resize:vertical;min-height:76px}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:pointer}
-
+ 
 /* ── TABS ── */
 .tabs{display:flex;gap:2px;border-bottom:1px solid var(--bdr);margin-bottom:22px}
 .tab{padding:9px 16px;font-size:14px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--tx2);border-bottom:2px solid transparent;margin-bottom:-1px;border-radius:0;font-family:'DM Sans',sans-serif;transition:color .15s}
 .tab:hover{color:var(--tx)}
 .tab.on{color:var(--acc);border-bottom-color:var(--acc);font-weight:600}
-
+ 
 /* ── STATS ── */
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px}
 .sc{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px 18px;box-shadow:var(--sh)}
@@ -83,7 +459,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .sc .sv{font-size:26px;font-family:'DM Serif Display',serif}
 .sc.hi{background:var(--acc);border-color:var(--acc)}
 .sc.hi .sl{color:rgba(255,255,255,.7)}.sc.hi .sv{color:#fff}
-
+ 
 /* ── BADGES ── */
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
 .b-single{background:var(--amb-bg);color:var(--amb)}
@@ -95,7 +471,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .b-s{background:var(--grn-bg);color:var(--grn)}
 .b-met{background:var(--grn-bg);color:var(--grn)}
 .b-unmet{background:var(--surf2);color:var(--tx3)}
-
+ 
 /* ── EXP CARDS ── */
 .exp-list{display:flex;flex-direction:column;gap:12px}
 .exp-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden;transition:box-shadow .15s}
@@ -106,7 +482,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .exp-meta{font-size:13px;color:var(--tx3)}
 .exp-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
 .exp-summary{font-size:14px;color:var(--tx2);margin-top:9px;line-height:1.6}
-
+ 
 /* ── EVIDENCE PANEL ── */
 .ev-panel{border-top:1px solid var(--bdr);padding:14px 20px;background:var(--bg)}
 .ev-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
@@ -128,7 +504,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .ev-doc-meta{font-size:11px;color:var(--tx3)}
 .ev-doc-actions{display:flex;gap:4px;flex-shrink:0}
 .ev-lo-label{font-size:11px;color:var(--tx3);margin-top:6px;margin-bottom:4px;font-weight:600}
-
+ 
 /* Drop zone */
 .ev-dropzone{border:2px dashed var(--bdr2);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .15s;position:relative}
 .ev-dropzone:hover,.ev-dropzone.drag-over{border-color:var(--acc);background:#fdf0e8}
@@ -136,14 +512,14 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .ev-dropzone-icon{font-size:24px;margin-bottom:4px}
 .ev-dropzone-text{font-size:13px;color:var(--tx2);font-weight:500}
 .ev-dropzone-sub{font-size:12px;color:var(--tx3);margin-top:2px}
-
+ 
 /* Upload progress */
 .upload-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surf);border:1px solid var(--bdr);border-radius:8px;margin-bottom:6px}
 .upload-bar-wrap{flex:1;height:5px;background:var(--bdr);border-radius:3px;overflow:hidden}
 .upload-bar{height:100%;background:var(--acc);border-radius:3px;transition:width .3s}
 .upload-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
 .upload-pct{font-size:12px;color:var(--tx3);white-space:nowrap}
-
+ 
 /* ── LO CARDS ── */
 .lo-grid{display:grid;gap:10px}
 .lo-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px;box-shadow:var(--sh)}
@@ -156,14 +532,14 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .lo-file-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;background:var(--surf);border:1px solid var(--bdr);border-radius:16px;font-size:12px;cursor:pointer;transition:all .15s;text-decoration:none;color:inherit}
 .lo-file-chip:hover{border-color:var(--blu);color:var(--blu)}
 .lo-file-chip .chip-icon{font-size:13px}
-
+ 
 /* ── REQ TABLE ── */
 .rt{width:100%;border-collapse:collapse;font-size:14px}
 .rt th{text-align:left;padding:9px 13px;background:var(--surf2);font-weight:600;color:var(--tx2);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
 .rt th:first-child{border-radius:7px 0 0 7px}.rt th:last-child{border-radius:0 7px 7px 0}
 .rt td{padding:11px 13px;border-bottom:1px solid var(--bdr)}
 .rmet{color:var(--grn);font-weight:600}.rno{color:var(--red)}
-
+ 
 /* ── STUDENT / CLASS ROWS ── */
 .row-list{display:flex;flex-direction:column;gap:7px}
 .r-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);cursor:pointer;box-shadow:var(--sh);transition:all .15s}
@@ -173,11 +549,11 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .lo-dots{display:flex;gap:3px}
 .lo-dot{width:9px;height:9px;border-radius:50%;background:var(--bdr);border:1.5px solid var(--bdr2)}
 .lo-dot.on{background:var(--grn);border-color:var(--grn)}
-
+ 
 /* ── CLASS HEADER ── */
 .cls-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);margin-bottom:8px}
 .cls-name{font-family:'DM Serif Display',serif;font-size:18px}
-
+ 
 /* ── OVERVIEW TABLE ── */
 .ov-wrap{overflow-x:auto}
 .ov-table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px}
@@ -187,7 +563,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .ov-table tr.stu-r:hover td{background:var(--surf2)}
 .ov-table tr.cls-r td{background:var(--surf3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);padding:6px 10px}
 .ov-y{color:var(--grn);font-weight:700}.ov-n{color:var(--bdr2)}
-
+ 
 /* ── MODAL ── */
 .overlay{position:fixed;inset:0;background:rgba(28,24,20,.52);z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:36px 14px;overflow-y:auto;backdrop-filter:blur(3px)}
 .modal{background:var(--surf);border-radius:var(--rl);width:100%;max-width:640px;padding:26px;box-shadow:var(--sh2);border:1px solid var(--bdr)}
@@ -200,20 +576,20 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .mfoot{display:flex;justify-content:flex-end;gap:8px;padding-top:18px;border-top:1px solid var(--bdr);margin-top:18px}
 .lo-fi{border:1px solid var(--bdr);border-radius:var(--r);padding:12px;margin-bottom:9px;background:var(--bg)}
 .lo-fi-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
-
+ 
 /* Lightbox */
 .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:999;display:flex;align-items:center;justify-content:center;padding:20px}
 .lightbox img{max-width:100%;max-height:90vh;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
 .lightbox-close{position:absolute;top:20px;right:24px;color:#fff;font-size:28px;cursor:pointer;line-height:1;opacity:.8}
 .lightbox-close:hover{opacity:1}
 .lightbox-name{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:#fff;font-size:14px;background:rgba(0,0,0,.5);padding:6px 14px;border-radius:20px;white-space:nowrap}
-
+ 
 /* ── PAGE TITLES ── */
 .ph{font-family:'DM Serif Display',serif;font-size:24px;letter-spacing:-.01em}
 .psub{font-size:13px;color:var(--tx3);margin-top:2px}
 .ptitle{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px}
 .back-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-
+ 
 /* ── MISC ── */
 .empty{text-align:center;padding:56px 20px;color:var(--tx3)}
 .empty-icon{font-size:38px;margin-bottom:10px;opacity:.6}
@@ -222,7 +598,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .spinner{width:18px;height:18px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;display:inline-block}
 @keyframes sp{to{transform:rotate(360deg)}}
 hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
-
+ 
 /* ── LO OVERVIEW GRID (student home) ── */
 .lo-overview-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:28px}
 .lo-ov-card{background:var(--surf);border:2px solid var(--bdr);border-radius:var(--rl);padding:16px 18px;cursor:pointer;transition:all .18s;box-shadow:var(--sh);position:relative;overflow:hidden}
@@ -242,7 +618,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 .lo-ov-count span.unmet-num{color:#dc2626}
 .lo-ov-arrow{position:absolute;right:14px;bottom:14px;font-size:16px;color:var(--bdr2)}
 .lo-ov-card:hover .lo-ov-arrow{color:var(--tx2)}
-
+ 
 /* ── LO DETAIL SCREEN ── */
 .lo-detail-header{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:20px 24px;margin-bottom:18px;box-shadow:var(--sh)}
 .lo-detail-badge{display:inline-block;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:700;margin-bottom:10px}
@@ -255,7 +631,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 .lo-req-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin-top:6px}
 .lo-req-card.req-ok{border-color:#16a34a;background:#f0faf2}
 .lo-req-card.req-ok .lo-req-num{color:#16a34a}
-
+ 
 /* ── APPROVAL WORKFLOW ── */
 .status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
 .status-draft{background:var(--surf2);color:var(--tx2);border:1px solid var(--bdr)}
@@ -270,7 +646,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 .feedback-box{background:#fff5f5;border:1px solid #fca5a5;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:14px;color:var(--tx)}
 .feedback-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#991b1b;margin-bottom:5px}
 .teacher-pending-badge{background:#f59e0b;color:#000;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
-
+ 
 /* ── PDF PRINT ── */
 @media print{
   body{background:#fff!important;font-size:11pt}
@@ -322,13 +698,13 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 .pdf-tb{display:inline-block;padding:2px 7px;border-radius:10px;font-size:8pt;font-weight:600}
 .pdf-tb-s{background:#fef3c7;color:#92400e}.pdf-tb-sh{background:#d8f3dc;color:#2d6a4f}
 .pdf-tb-e{background:#dbeafe;color:#1a4f8a}.pdf-tb-p{background:#ede9fe;color:#5b21b6}
-
+ 
 @media(max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}.fr,.fr3{grid-template-columns:1fr}.main{padding:14px}.bar{padding:0 14px}.ev-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
 @media(max-width:460px){.stats{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
-
+ 
 <div class="bar">
   <div class="bar-left">
     <div class="logo-zone" title="Click to upload school logo">
@@ -348,20 +724,20 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
     </div>
   </div>
 </div>
-
+ 
 <div id="root"></div>
 <div id="lightbox" class="lightbox" style="display:none" onclick="closeLightbox()">
   <span class="lightbox-close" onclick="closeLightbox()">×</span>
   <img id="lbImg" src="" alt="">
   <div class="lightbox-name" id="lbName"></div>
 </div>
-
+ 
 <script>
 // ══════════════════════════════════════════════════
 //  CONFIG
 // ══════════════════════════════════════════════════
 const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
-
+ 
 // ══════════════════════════════════════════════════
 //  CONSTANTS
 // ══════════════════════════════════════════════════
@@ -380,7 +756,7 @@ const ET={
   extended:{label:'Extended (6 months)', los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:1,bc:'b-extended',ptbc:'pdf-tb-e'},
   project: {label:'CAS Project',          los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:0,bc:'b-project', ptbc:'pdf-tb-p'},
 };
-
+ 
 // File type helpers
 const MIME_ICONS={
   'image':'🖼️','video':'🎬',
@@ -398,7 +774,7 @@ function fileIcon(mimeType){
 function isImage(mimeType){return mimeType&&mimeType.startsWith('image/')}
 function isVideo(mimeType){return mimeType&&mimeType.startsWith('video/')}
 function fmtSize(bytes){if(bytes<1024)return bytes+'B';if(bytes<1048576)return(bytes/1024).toFixed(1)+'KB';return(bytes/1048576).toFixed(1)+'MB'}
-
+ 
 // ══════════════════════════════════════════════════
 //  DUMMY DATA
 // ══════════════════════════════════════════════════
@@ -448,7 +824,7 @@ const DUMMY={
     ],
   }
 };
-
+ 
 // ══════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════
@@ -457,6 +833,7 @@ let APP={
   tab:'experiences',
   studentScreen:'home',   // 'home' | 'lo-detail'
   currentLoId:null,       // which LO is being drilled into
+  loDetailTab:'activities', // 'activities' | 'all' | 'requirements'
   teacherTab:'classes',
   teacherApprovalFilter:'all', // 'all'|'pending'
   currentClassId:null,
@@ -471,13 +848,13 @@ let APP={
   // Upload tracking: { expId: [{name, progress, done, error}] }
   uploads:{},
 };
-
+ 
 // ══════════════════════════════════════════════════
 //  LOCAL STORAGE
 // ══════════════════════════════════════════════════
 function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
-
+ 
 function saveAll(){
   lsSet('cas_v5',{
     students:APP.students,classes:APP.classes,
@@ -495,7 +872,7 @@ function loadAll(){
     APP.myStudentId=d.myStudentId||APP.myStudentId;
   }
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  LOGO
 // ══════════════════════════════════════════════════
@@ -515,7 +892,7 @@ function renderLogo(){
     if(h)h.style.display='';
   }
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  HELPERS
 // ══════════════════════════════════════════════════
@@ -529,7 +906,7 @@ function filesFor(sid,expId){
 function losMet(exps){return LOs.map(lo=>exps.some(e=>(e.los||{})[lo.id]&&e.los[lo.id].met))}
 function strandBadges(e){return[e.creativity&&'<span class="badge b-c">Creativity</span>',e.activity&&'<span class="badge b-a">Activity</span>',e.service&&'<span class="badge b-s">Service</span>'].filter(Boolean).join('')}
 function loBadges(e){return LOs.map(lo=>{const d=(e.los||{})[lo.id];if(!d)return'';return`<span class="badge ${d.met?'b-met':'b-unmet'}">${lo.label}${d.met?' ✓':''}</span>`}).join('')}
-
+ 
 function dot(cls,txt){
   const d=document.getElementById('syncDot'),t=document.getElementById('syncTxt');
   if(d)d.className='dot '+cls;if(t)t.textContent=txt;
@@ -541,12 +918,12 @@ function setModal(html){
   el.addEventListener('click',ev=>{if(ev.target===el)setModal(null)});
   el.innerHTML=html;document.body.appendChild(el);
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  GOOGLE DRIVE API
 // ══════════════════════════════════════════════════
 function configured(){return SCRIPT_URL&&SCRIPT_URL!=='YOUR_APPS_SCRIPT_URL_HERE'}
-
+ 
 async function apiCall(action,extra={}){
   dot('busy','Saving…');
   try{
@@ -556,7 +933,7 @@ async function apiCall(action,extra={}){
     dot('ok','Synced');return d;
   }catch(err){dot('err','Error');throw err}
 }
-
+ 
 // Read file as base64
 function readFileAsBase64(file){
   return new Promise((res,rej)=>{
@@ -570,7 +947,7 @@ function readFileAsBase64(file){
     r.readAsDataURL(file);
   });
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  FILE UPLOAD HANDLER
 // ══════════════════════════════════════════════════
@@ -579,40 +956,40 @@ async function handleFileUpload(files, sid, expId, loId){
     alert('Connect to Google Sheets first to upload evidence files.\n\nAdd your Apps Script URL to the SCRIPT_URL constant in this file.');
     return;
   }
-
+ 
   const MAX_MB=50;
   const allowed=['image/','video/','application/pdf',
     'application/msword','application/vnd.openxmlformats',
     'application/vnd.ms-powerpoint','text/plain'];
-
+ 
   for(const file of Array.from(files)){
     // Validate type
     const ok=allowed.some(t=>file.type.startsWith(t));
     if(!ok){showToast(`Skipped "${file.name}" — unsupported file type.`,'err');continue}
     // Validate size
     if(file.size>MAX_MB*1024*1024){showToast(`"${file.name}" exceeds ${MAX_MB}MB limit.`,'err');continue}
-
+ 
     // Register upload in progress tracker
     if(!APP.uploads[expId])APP.uploads[expId]=[];
     const upObj={id:uid(),name:file.name,progress:0,done:false,error:null};
     APP.uploads[expId].push(upObj);
     rerenderEvPanel(sid,expId); // show progress bar immediately
-
+ 
     try{
       // Simulate progress (actual upload is one shot — this gives user feedback)
       const progressInterval=setInterval(()=>{
         if(upObj.progress<85){upObj.progress+=15;rerenderEvPanel(sid,expId)}
       },300);
-
+ 
       const b64=await readFileAsBase64(file);
       const result=await apiCall('uploadFile',{
         studentId:sid,expId,loId:loId||'',
         fileName:file.name,mimeType:file.type,base64Data:b64
       });
-
+ 
       clearInterval(progressInterval);
       upObj.progress=100;upObj.done=true;
-
+ 
       // Add file to local state
       const expArr=APP.experiences[sid]||[];
       const exp=expArr.find(e=>e.id===expId);
@@ -626,7 +1003,7 @@ async function handleFileUpload(files, sid, expId, loId){
       upObj.error=err.message;upObj.done=true;
       showToast(`Upload failed: ${err.message}`,'err');
     }
-
+ 
     // Remove from upload queue after short delay
     setTimeout(()=>{
       APP.uploads[expId]=(APP.uploads[expId]||[]).filter(u=>u.id!==upObj.id);
@@ -634,7 +1011,7 @@ async function handleFileUpload(files, sid, expId, loId){
     },2000);
   }
 }
-
+ 
 async function deleteEvidenceFile(sid, expId, fileId){
   if(!confirm('Delete this evidence file?'))return;
   // Remove from local state
@@ -647,7 +1024,7 @@ async function deleteEvidenceFile(sid, expId, fileId){
     catch(err){showToast('Delete failed on server: '+err.message,'err')}
   }
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  TOAST NOTIFICATION
 // ══════════════════════════════════════════════════
@@ -661,7 +1038,7 @@ function showToast(msg,type='ok'){
   document.body.appendChild(t);
   setTimeout(()=>t.remove(),3500);
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  EVIDENCE PANEL RENDERER
 // ══════════════════════════════════════════════════
@@ -671,13 +1048,13 @@ function rerenderEvPanel(sid, expId){
   if(el){el.outerHTML=buildEvPanel(sid,expId)}
   else render(); // fallback full re-render
 }
-
+ 
 function buildEvPanel(sid, expId, editable=true){
   const files=filesFor(sid,expId);
   const uploads=(APP.uploads[expId]||[]).filter(u=>!u.done);
   const doneUploads=(APP.uploads[expId]||[]).filter(u=>u.done);
   const totalFiles=files.length;
-
+ 
   // Group files by loId ('' = general)
   const grouped={};
   files.forEach(f=>{
@@ -685,16 +1062,16 @@ function buildEvPanel(sid, expId, editable=true){
     if(!grouped[k])grouped[k]=[];
     grouped[k].push(f);
   });
-
+ 
   const imgFiles=files.filter(f=>isImage(f.mimeType));
   const docFiles=files.filter(f=>!isImage(f.mimeType));
-
+ 
   let html=`<div class="ev-panel" id="ev-panel-${expId}">
     <div class="ev-header">
       <span class="ev-title">Evidence files</span>
       <span class="ev-count">${totalFiles} file${totalFiles!==1?'s':''}</span>
     </div>`;
-
+ 
   // Upload progress bars
   if(uploads.length||doneUploads.length){
     html+=`<div style="margin-bottom:10px">`;
@@ -708,7 +1085,7 @@ function buildEvPanel(sid, expId, editable=true){
     });
     html+=`</div>`;
   }
-
+ 
   // Image thumbnails
   if(imgFiles.length){
     html+=`<div class="ev-grid">`;
@@ -729,7 +1106,7 @@ function buildEvPanel(sid, expId, editable=true){
     });
     html+=`</div>`;
   }
-
+ 
   // Document / video files
   if(docFiles.length){
     html+=`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">`;
@@ -749,11 +1126,11 @@ function buildEvPanel(sid, expId, editable=true){
     });
     html+=`</div>`;
   }
-
+ 
   if(!files.length&&!uploads.length){
     html+=`<div style="font-size:13px;color:var(--tx3);margin-bottom:10px">No evidence files uploaded yet.</div>`;
   }
-
+ 
   // Drop zone (only for editable / student view)
   if(editable){
     html+=`<div class="ev-dropzone" id="dz-${expId}"
@@ -768,11 +1145,11 @@ function buildEvPanel(sid, expId, editable=true){
     </div>
     ${!configured()?`<div style="font-size:12px;color:var(--amb);margin-top:6px;text-align:center">⚠️ Connect to Google Sheets to enable file uploads — see SETUP.md</div>`:''}`;
   }
-
+ 
   html+=`</div>`;
   return html;
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  LIGHTBOX
 // ══════════════════════════════════════════════════
@@ -782,7 +1159,7 @@ function openLightbox(url,name){
   document.getElementById('lightbox').style.display='flex';
 }
 function closeLightbox(){document.getElementById('lightbox').style.display='none'}
-
+ 
 // ══════════════════════════════════════════════════
 //  PORTFOLIO RENDERERS
 // ══════════════════════════════════════════════════
@@ -825,7 +1202,7 @@ function renderExpList(sid, editable){
     </div>`
   }).join('')}</div>`
 }
-
+ 
 function renderLOsView(sid){
   const list=expsFor(sid);
   return`<div class="lo-grid">${LOs.map(lo=>{
@@ -852,7 +1229,7 @@ function renderLOsView(sid){
     </div>`
   }).join('')}</div>`
 }
-
+ 
 function renderReqsView(sid){
   const met=losMet(expsFor(sid));
   const list=expsFor(sid);
@@ -886,14 +1263,14 @@ function renderReqsView(sid){
     </div>`).join('')}
   </div>`
 }
-
+ 
 function portfolioStats(sid){
   const list=expsFor(sid);const met=losMet(list);
   const c={single:0,short:0,extended:0,project:0};
   list.forEach(e=>{if(c[e.type]!==undefined)c[e.type]++});
   return{list,met,c};
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  ROLE SWITCH
 // ══════════════════════════════════════════════════
@@ -902,10 +1279,10 @@ function switchRole(r){
   document.getElementById('btnS').classList.toggle('on',r==='student');
   document.getElementById('btnT').classList.toggle('on',r==='teacher');
   APP.tab='experiences';APP.currentClassId=null;APP.currentStudentId=null;
-  APP.studentScreen='home';APP.currentLoId=null;
+  APP.studentScreen='home';APP.currentLoId=null;APP.loDetailTab='activities';
   render();
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  APPROVAL HELPERS
 // ══════════════════════════════════════════════════
@@ -934,7 +1311,7 @@ function statusPill(status){
   };
   return map[status]||map.draft;
 }
-
+ 
 function submitForApproval(sid,expId){
   const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
   if(!exp)return;
@@ -943,7 +1320,7 @@ function submitForApproval(sid,expId){
   showToast('Submitted for teacher approval.','ok');
   if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  STUDENT VIEW — HOME (LO overview grid)
 // ══════════════════════════════════════════════════
@@ -956,12 +1333,12 @@ function renderStudentPicker(){
     <span style="font-size:12px;color:var(--tx3)">(Demo — simulates a student signing in)</span>
   </div>`
 }
-
+ 
 function renderStudentView(){
   if(APP.studentScreen==='lo-detail'&&APP.currentLoId){renderLODetailScreen();return}
   renderStudentHome();
 }
-
+ 
 function renderStudentHome(){
   const sid=APP.myStudentId;
   const stu=APP.students.find(s=>s.id===sid);
@@ -971,10 +1348,14 @@ function renderStudentHome(){
   const {c}=portfolioStats(sid);
   const totalMet=metApproved.filter(Boolean).length;
   const feedbackItems=list.filter(e=>expStatus(e)==='feedback');
-
+  const pendingItems=list.filter(e=>expStatus(e)==='pending');
+  const totalExps=list.length;
+  const totalFiles=list.reduce((n,e)=>n+(e.files||[]).length,0);
+ 
   document.getElementById('root').innerHTML=`
   <div class="main">
     ${renderStudentPicker()}
+ 
     <div class="ptitle">
       <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS 2017 · ${esc(stu?stu.name:'')}</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -982,20 +1363,50 @@ function renderStudentHome(){
         <button class="btn btn-p" onclick="openAddExp('${sid}')">+ Add experience</button>
       </div>
     </div>
-
-    ${feedbackItems.length?`<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:var(--rl);padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:22px">↩</span>
-      <div>
+ 
+    ${feedbackItems.length?`<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:var(--rl);padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openLODetail('${LOs.find(lo=>feedbackItems.some(e=>(e.los||{})[lo.id]))?.id||LOs[0].id}')">
+      <span style="font-size:20px">↩</span>
+      <div style="flex:1">
         <div style="font-weight:600;font-size:14px;color:#991b1b">${feedbackItems.length} experience${feedbackItems.length>1?'s have':' has'} received teacher feedback</div>
-        <div style="font-size:13px;color:var(--tx2)">Review feedback in the experience list and resubmit when ready.</div>
+        <div style="font-size:13px;color:var(--tx2)">Click an LO card below to review feedback and resubmit.</div>
       </div>
     </div>`:''}
-
-    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:14px">Learning Outcomes — ${totalMet}/7 met</div>
+ 
+    ${pendingItems.length?`<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--rl);padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:18px">⏳</span>
+      <div style="font-size:13px;color:#92400e"><strong>${pendingItems.length} submission${pendingItems.length>1?'s':''} awaiting teacher approval.</strong> You'll see them updated once reviewed.</div>
+    </div>`:''}
+ 
+    <!-- Quick-glance stats strip -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:26px">
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px 16px;box-shadow:var(--sh);text-align:center">
+        <div style="font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Experiences</div>
+        <div style="font-size:26px;font-family:'DM Serif Display',serif">${totalExps}</div>
+      </div>
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px 16px;box-shadow:var(--sh);text-align:center">
+        <div style="font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Evidence files</div>
+        <div style="font-size:26px;font-family:'DM Serif Display',serif">${totalFiles}</div>
+      </div>
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px 16px;box-shadow:var(--sh);text-align:center">
+        <div style="font-size:11px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Pending review</div>
+        <div style="font-size:26px;font-family:'DM Serif Display',serif">${pendingItems.length}</div>
+      </div>
+      <div style="background:var(--acc);border:1px solid var(--acc);border-radius:var(--rl);padding:14px 16px;box-shadow:var(--sh);text-align:center">
+        <div style="font-size:11px;color:rgba(255,255,255,.75);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">LOs met</div>
+        <div style="font-size:26px;font-family:'DM Serif Display',serif;color:#fff">${totalMet}/7</div>
+      </div>
+    </div>
+ 
+    <!-- LO overview grid — the only entry point to details -->
+    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:14px">
+      Learning Outcomes <span style="font-size:14px;font-family:'DM Sans',sans-serif;color:var(--tx3);font-weight:400;margin-left:6px">Click any card to view details and manage activities</span>
+    </div>
     <div class="lo-overview-grid">
       ${LOs.map((lo,i)=>{
         const met=metApproved[i];
         const count=metCounts[i];
+        const hasFeedback=list.some(e=>expStatus(e)==='feedback'&&(e.los||{})[lo.id]);
+        const hasPending=list.some(e=>expStatus(e)==='pending'&&(e.los||{})[lo.id]);
         return`<div class="lo-ov-card ${met?'is-met':'not-met'}" onclick="openLODetail('${lo.id}')">
           <div class="lo-ov-top">
             <span class="lo-ov-label">${lo.label}</span>
@@ -1004,104 +1415,170 @@ function renderStudentHome(){
           <div class="lo-ov-title">${lo.title}</div>
           <div class="lo-ov-desc">${lo.desc}</div>
           <div class="lo-ov-count"><span class="${met?'met-num':'unmet-num'}">${count}</span>approved experience${count!==1?'s':''}</div>
+          ${hasFeedback?`<div style="font-size:11px;color:#991b1b;font-weight:600;margin-top:5px">↩ Feedback to review</div>`:''}
+          ${hasPending&&!hasFeedback?`<div style="font-size:11px;color:#92400e;font-weight:600;margin-top:5px">⏳ Awaiting approval</div>`:''}
           <div class="lo-ov-arrow">›</div>
         </div>`
       }).join('')}
     </div>
-
-    <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:14px;margin-top:4px">Experience summary</div>
-    <div class="stats" style="margin-bottom:28px">
-      <div class="sc"><div class="sl">Single</div><div class="sv">${c.single}</div></div>
-      <div class="sc"><div class="sl">Short</div><div class="sv">${c.short}</div></div>
-      <div class="sc"><div class="sl">Extended</div><div class="sv">${c.extended}</div></div>
-      <div class="sc"><div class="sl">Project</div><div class="sv">${c.project}</div></div>
-      <div class="sc hi"><div class="sl">LOs met</div><div class="sv">${totalMet}/7</div></div>
-    </div>
-
-    <div class="tabs">
-      <button class="tab ${APP.tab==='experiences'?'on':''}" onclick="APP.tab='experiences';render()">All Experiences</button>
-      <button class="tab ${APP.tab==='los'?'on':''}" onclick="APP.tab='los';render()">LO Detail</button>
-      <button class="tab ${APP.tab==='requirements'?'on':''}" onclick="APP.tab='requirements';render()">Requirements</button>
-    </div>
-    ${APP.tab==='experiences'  ? renderExpList(sid,true)  : ''}
-    ${APP.tab==='los'          ? renderLOsView(sid)        : ''}
-    ${APP.tab==='requirements' ? renderReqsView(sid)       : ''}
   </div>`;
 }
-
-function openLODetail(loId){APP.studentScreen='lo-detail';APP.currentLoId=loId;render()}
-
+ 
+function openLODetail(loId){APP.studentScreen='lo-detail';APP.currentLoId=loId;APP.loDetailTab='activities';render()}
+ 
 function renderLODetailScreen(){
   const sid=APP.myStudentId;
   const lo=LOs.find(l=>l.id===APP.currentLoId);
   if(!lo){APP.studentScreen='home';render();return}
+ 
   const list=expsFor(sid);
   const metApproved=loMetApproved(sid);
   const loIndex=LOs.indexOf(lo);
   const isMet=metApproved[loIndex];
   const linked=list.filter(e=>(e.los||{})[lo.id]);
   const approvedMet=linked.filter(e=>expStatus(e)==='met'&&e.los[lo.id].met);
+  const loDetailTab=APP.loDetailTab||'activities';
+ 
+  // Requirements: approved-met count by experience type for this LO
   const reqData=Object.entries(ET).filter(([,v])=>v.los.includes(lo.id)).map(([type,v])=>{
     const done=list.filter(e=>e.type===type&&expStatus(e)==='met'&&(e.los||{})[lo.id]&&e.los[lo.id].met).length;
     return{type,label:v.label,done,ok:done>=1};
   });
-
+ 
+  // Navigation between LOs
+  const loIdx=LOs.indexOf(lo);
+  const prevLo=LOs[loIdx-1];
+  const nextLo=LOs[loIdx+1];
+ 
   document.getElementById('root').innerHTML=`
   <div class="main">
-    <div class="back-row">
-      <button class="btn" onclick="APP.studentScreen='home';APP.currentLoId=null;render()">← My Portfolio</button>
+    <!-- Back + LO navigation -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px">
+      <button class="btn" onclick="APP.studentScreen='home';APP.currentLoId=null;render()">← Back to Portfolio</button>
+      <div style="display:flex;gap:6px">
+        ${prevLo?`<button class="btn btn-sm" onclick="openLODetail('${prevLo.id}')">‹ ${prevLo.label}</button>`:'<span></span>'}
+        ${nextLo?`<button class="btn btn-sm" onclick="openLODetail('${nextLo.id}')">${nextLo.label} ›</button>`:''}
+      </div>
     </div>
-    <div class="lo-detail-header">
-      <div class="lo-detail-badge ${isMet?'met':'unmet'}">${lo.label} — ${isMet?'MET':'NOT YET MET'}</div>
-      <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px">${lo.title}</div>
-      <div style="font-size:14px;color:var(--tx2)">${lo.desc}</div>
-      ${isMet?`<div style="margin-top:10px;font-size:14px;color:#16a34a;font-weight:600">✓ ${approvedMet.length} approved experience${approvedMet.length!==1?'s address':' addresses'} this outcome.</div>`
-      :`<div style="margin-top:10px;font-size:14px;color:#dc2626">No approved experiences yet. Add an activity and submit for teacher approval.</div>`}
-    </div>
-
-    <div style="font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:12px">Experience types that cover this LO</div>
-    <div class="lo-req-grid" style="margin-bottom:22px">
-      ${reqData.map(r=>`<div class="lo-req-card ${r.ok?'req-ok':''}">
-        <div class="lo-req-num">${r.done}</div>
-        <div class="lo-req-done">approved</div>
-        <div class="lo-req-label">${r.label}</div>
-      </div>`).join('')}
-    </div>
-
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-      <div style="font-family:'DM Serif Display',serif;font-size:16px">Activities for this outcome</div>
-      <button class="btn btn-p btn-sm" onclick="openAddExp('${sid}','${lo.id}')">+ Add activity for ${lo.label}</button>
-    </div>
-
-    ${linked.length?`<div style="display:flex;flex-direction:column;gap:10px">
-      ${linked.map(e=>{
-        const d=e.los[lo.id];const status=expStatus(e);
-        return`<div class="approval-card ${status==='pending'?'pending-card':status==='feedback'?'feedback-card':status==='met'?'met-card':''}">
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-            <div style="flex:1">
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
-                <span style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:600">${esc(e.name)}</span>
-                ${statusPill(status)}
-                <span class="badge ${ET[e.type]?.bc||''}">${ET[e.type]?.label||e.type}</span>
-              </div>
-              <div style="font-size:13px;color:var(--tx3)">${[e.when,e.where].filter(Boolean).map(esc).join(' · ')}</div>
-              ${d.reflection?`<div style="font-size:14px;color:var(--tx2);margin-top:8px;font-style:italic">"${esc(d.reflection)}"</div>`:''}
-              ${!d.met?'<div style="font-size:13px;color:#dc2626;margin-top:6px">LO not yet marked as met in this experience — edit to update.</div>':''}
-            </div>
-            <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">
-              ${status==='draft'||status==='feedback'?`<button class="btn btn-sm btn-p" onclick="submitForApproval('${sid}','${e.id}')">Submit for approval</button>`:''}
-              ${status==='draft'||status==='feedback'?`<button class="btn btn-sm" onclick="openEditExp('${e.id}')">Edit</button>`:''}
-            </div>
+ 
+    <!-- LO header card -->
+    <div class="lo-detail-header" style="margin-bottom:18px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div class="lo-detail-badge ${isMet?'met':'unmet'}" style="margin-bottom:10px">${lo.label} — ${isMet?'MET':'NOT YET MET'}</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px">${lo.title}</div>
+          <div style="font-size:14px;color:var(--tx2);line-height:1.6">${lo.desc}</div>
+          <div style="margin-top:10px;font-size:14px;font-weight:600;color:${isMet?'#16a34a':'#dc2626'}">
+            ${isMet?`✓ ${approvedMet.length} approved experience${approvedMet.length!==1?'s address':' addresses'} this outcome`
+            :`No approved experiences yet — add an activity below and submit for teacher approval`}
           </div>
-          ${status==='feedback'&&e.teacherFeedback?`<div class="feedback-box"><div class="feedback-label">Teacher feedback</div>${esc(e.teacherFeedback)}</div>`:''}
-          ${status==='pending'?`<div style="margin-top:10px;font-size:13px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:7px">⏳ Awaiting teacher review.</div>`:''}
-        </div>`
-      }).join('')}
-    </div>`:
-    `<div class="empty"><div class="empty-icon">📝</div><div class="empty-title">No activities for ${lo.label} yet</div><div>Add an experience and link it to this outcome.</div></div>`}
+        </div>
+        <button class="btn btn-p" onclick="openAddExp('${sid}','${lo.id}')">+ Add activity</button>
+      </div>
+ 
+      <!-- Approved count by type -->
+      <div class="lo-req-grid" style="margin-top:16px;margin-bottom:0">
+        ${reqData.map(r=>`<div class="lo-req-card ${r.ok?'req-ok':''}">
+          <div class="lo-req-num">${r.done}</div>
+          <div class="lo-req-done">approved</div>
+          <div class="lo-req-label">${r.label}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+ 
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab ${loDetailTab==='activities'?'on':''}" onclick="APP.loDetailTab='activities';render()">
+        Activities for ${lo.label} ${linked.length?`(${linked.length})`:''}
+      </button>
+      <button class="tab ${loDetailTab==='all'?'on':''}" onclick="APP.loDetailTab='all';render()">All experiences</button>
+      <button class="tab ${loDetailTab==='requirements'?'on':''}" onclick="APP.loDetailTab='requirements';render()">Requirements</button>
+    </div>
+ 
+    <!-- Tab content -->
+    ${loDetailTab==='activities' ? renderLOActivities(sid, lo) : ''}
+    ${loDetailTab==='all'        ? renderExpList(sid, true)    : ''}
+    ${loDetailTab==='requirements' ? renderReqsView(sid)       : ''}
   </div>`;
 }
-
+ 
+function renderLOActivities(sid, lo){
+  const list=expsFor(sid);
+  const linked=list.filter(e=>(e.los||{})[lo.id]);
+ 
+  if(!linked.length) return`<div class="empty">
+    <div class="empty-icon">📝</div>
+    <div class="empty-title">No activities linked to ${lo.label} yet</div>
+    <div style="margin-bottom:20px">Use "+ Add activity" above to log an experience for this outcome.</div>
+  </div>`;
+ 
+  return`<div style="display:flex;flex-direction:column;gap:12px">
+    ${linked.map(e=>{
+      const d=e.los[lo.id];
+      const status=expStatus(e);
+      const files=e.files||[];
+      return`<div class="approval-card ${status==='pending'?'pending-card':status==='feedback'?'feedback-card':status==='met'?'met-card':''}">
+        <!-- Header row -->
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+              <span style="font-family:'DM Serif Display',serif;font-size:16px;font-weight:600">${esc(e.name)}</span>
+              ${statusPill(status)}
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px">
+              <span class="badge ${ET[e.type]?.bc||''}">${ET[e.type]?.label||e.type}</span>
+              <span class="badge b-unmet">${esc(e.year||'')}</span>
+              ${[e.creativity&&'<span class="badge b-c">Creativity</span>',e.activity&&'<span class="badge b-a">Activity</span>',e.service&&'<span class="badge b-s">Service</span>'].filter(Boolean).join('')}
+              ${files.length?`<span class="badge" style="background:var(--blu-bg);color:var(--blu)">📎 ${files.length} file${files.length!==1?'s':''}</span>`:''}
+            </div>
+            <div style="font-size:13px;color:var(--tx3)">${[e.when,e.where,e.who].filter(Boolean).map(esc).join(' · ')}</div>
+          </div>
+          <!-- Action buttons -->
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end">
+            ${status==='draft'||status==='feedback'?`<button class="btn btn-sm btn-p" onclick="submitForApproval('${sid}','${e.id}')">Submit for approval</button>`:''}
+            ${status==='draft'||status==='feedback'?`<button class="btn btn-sm" onclick="openEditExp('${e.id}')">Edit</button>`:''}
+            ${status==='draft'||status==='feedback'?`<button class="btn btn-sm btn-danger" onclick="delExp('${sid}','${e.id}')">Delete</button>`:''}
+          </div>
+        </div>
+ 
+        <!-- What -->
+        ${e.what?`<div style="font-size:14px;color:var(--tx2);margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);line-height:1.6">${esc(e.what)}</div>`:''}
+ 
+        <!-- LO reflection for this specific LO -->
+        <div style="margin-top:10px;padding:12px;background:${status==='met'?'#f0faf2':status==='feedback'?'#fff5f5':'var(--surf2)'};border-radius:8px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:5px">${lo.label} reflection</div>
+          ${d.reflection
+            ?`<div style="font-size:14px;color:var(--tx);font-style:italic;line-height:1.6">"${esc(d.reflection)}"</div>`
+            :`<div style="font-size:13px;color:var(--tx3)">No reflection written yet. Edit this experience to add one.</div>`}
+          ${d.evidence?`<div style="font-size:12px;color:var(--tx3);margin-top:5px">Notes: ${esc(d.evidence)}</div>`:''}
+          <div style="margin-top:8px">
+            <span class="badge ${d.met?'b-met':'b-unmet'}">${d.met?'✓ LO marked as met':'LO not yet marked as met'}</span>
+          </div>
+        </div>
+ 
+        <!-- Evidence files for this experience -->
+        ${files.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr)">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:8px">Evidence files</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${files.map(f=>`<a href="${esc(f.driveUrl||'#')}" target="_blank" class="lo-file-chip">
+              <span class="chip-icon">${fileIcon(f.mimeType)}</span>${esc(f.fileName)}
+            </a>`).join('')}
+          </div>
+        </div>`:''}
+ 
+        <!-- Teacher feedback -->
+        ${status==='feedback'&&e.teacherFeedback?`<div class="feedback-box" style="margin-top:10px"><div class="feedback-label">Teacher feedback</div>${esc(e.teacherFeedback)}</div>`:''}
+        ${status==='pending'?`<div style="margin-top:10px;font-size:13px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:7px">⏳ Submitted and awaiting teacher review. No action needed.</div>`:''}
+        ${status==='met'?`<div style="margin-top:10px;font-size:13px;color:#16a34a;background:#f0faf2;padding:8px 12px;border-radius:7px;font-weight:600">✓ Teacher approved — this experience counts towards ${lo.label}.</div>`:''}
+ 
+        <!-- Upload evidence (for draft/feedback status) -->
+        ${(status==='draft'||status==='feedback')?buildEvPanel(sid,e.id,true):''}
+      </div>`
+    }).join('')}
+  </div>`;
+}
+ 
+ 
 // ══════════════════════════════════════════════════
 //  TEACHER VIEWS
 // ══════════════════════════════════════════════════
@@ -1110,7 +1587,7 @@ function renderTeacherView(){
   if(APP.currentClassId){renderTeacherClass();return}
   renderTeacherHome();
 }
-
+ 
 function renderTeacherHome(){
   const pending=allPendingSubmissions();
   document.getElementById('root').innerHTML=`
@@ -1129,7 +1606,7 @@ function renderTeacherHome(){
     ${APP.teacherTab==='classes'?renderClassList():APP.teacherTab==='overview'?renderOverviewTable():renderApprovalsPanel()}
   </div>`;
 }
-
+ 
 function renderApprovalsPanel(){
   const pending=allPendingSubmissions();
   if(!pending.length)return`<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">No pending submissions</div><div>Students will appear here when they submit experiences for approval.</div></div>`;
@@ -1159,7 +1636,7 @@ function renderApprovalsPanel(){
     }).join('')}
   </div>`;
 }
-
+ 
 function teacherMarkMet(sid,expId){
   const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
   if(!exp)return;
@@ -1170,7 +1647,7 @@ function teacherMarkMet(sid,expId){
   showToast('Experience marked as met.','ok');
   if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
 }
-
+ 
 function openTeacherFeedback(sid,expId){
   const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
   const stu=APP.students.find(s=>s.id===sid);
@@ -1194,7 +1671,7 @@ function openTeacherFeedback(sid,expId){
     </div>
   </div>`);
 }
-
+ 
 function submitTeacherFeedback(sid,expId){
   const fb=document.getElementById('teacherFbText')?.value.trim();
   if(!fb){alert('Please enter some feedback before sending.');return}
@@ -1205,7 +1682,7 @@ function submitTeacherFeedback(sid,expId){
   showToast('Feedback sent to student.','ok');
   if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
 }
-
+ 
 function renderClassList(){
   if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">🏫</div><div class="empty-title">No classes yet</div></div>`;
   return APP.classes.map(cls=>{
@@ -1237,7 +1714,7 @@ function renderClassList(){
     </div>`
   }).join('')
 }
-
+ 
 function renderOverviewTable(){
   if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">No classes yet</div></div>`;
   return`<div class="card ov-wrap"><table class="ov-table"><thead><tr>
@@ -1262,7 +1739,7 @@ function renderOverviewTable(){
   `).join('')}
   </tbody></table></div>`
 }
-
+ 
 function renderTeacherClass(){
   const cls=APP.classes.find(c=>c.id===APP.currentClassId);
   if(!cls){APP.currentClassId=null;render();return}
@@ -1293,7 +1770,7 @@ function renderTeacherClass(){
     </div>
   </div>`;
 }
-
+ 
 function renderTeacherStudent(){
   const stu=APP.students.find(s=>s.id===APP.currentStudentId);
   if(!stu){APP.currentStudentId=null;render();return}
@@ -1324,7 +1801,7 @@ function renderTeacherStudent(){
     ${APP.teacherStuTab==='requirements' ? renderReqsView(sid)       : ''}
   </div>`;
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  MAIN RENDER
 // ══════════════════════════════════════════════════
@@ -1332,12 +1809,12 @@ function render(){
   if(APP.role==='student')renderStudentView();
   else renderTeacherView();
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  EXPERIENCE MODAL
 // ══════════════════════════════════════════════════
 let _editSid=null,_editEid=null,_focusLoId=null;
-
+ 
 function openAddExp(sid,focusLoId){_editSid=sid;_editEid=null;_focusLoId=focusLoId||null;buildExpModal()}
 function openEditExp(eid){
   _focusLoId=null;
@@ -1346,7 +1823,7 @@ function openEditExp(eid){
   }
   buildExpModal();
 }
-
+ 
 function buildExpModal(){
   const base=_editEid?(APP.experiences[_editSid]||[]).find(e=>e.id===_editEid):null;
   const expType=(base&&base.type)||'single';
@@ -1396,7 +1873,7 @@ function buildExpModal(){
     </div>
   </div>`);
 }
-
+ 
 function buildLOForms(expType,base){
   return ET[expType].los.map(loId=>{
     const lo=LOs.find(l=>l.id===loId);
@@ -1419,11 +1896,11 @@ function buildLOForms(expType,base){
     </div>`
   }).join('')
 }
-
+ 
 function rebuildLOForms(){
   document.getElementById('loForms').innerHTML=buildLOForms(document.getElementById('mType').value,null);
 }
-
+ 
 function saveExp(){
   const btn=document.getElementById('saveExpBtn');if(btn)btn.disabled=true;
   const type=document.getElementById('mType').value;
@@ -1463,14 +1940,14 @@ function saveExp(){
   else render();
   if(configured())apiCall('saveExperience',{exp}).catch(e=>console.warn(e));
 }
-
+ 
 function delExp(sid,eid){
   if(!confirm('Delete this experience and all its evidence files?'))return;
   APP.experiences[sid]=(APP.experiences[sid]||[]).filter(e=>e.id!==eid);
   saveAll();render();
   if(configured())apiCall('deleteExperience',{expId:eid}).catch(e=>console.warn(e));
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  CLASS MODALS
 // ══════════════════════════════════════════════════
@@ -1492,7 +1969,7 @@ function delClass(classId){
   APP.students.forEach(s=>{if(s.classId===classId)s.classId=null});
   saveAll();render();
 }
-
+ 
 function openAddStudentToClass(classId){
   const unassigned=APP.students.filter(s=>s.classId!==classId);
   setModal(`<div class="modal" style="max-width:420px">
@@ -1510,19 +1987,19 @@ function openAddStudentToClass(classId){
     <div class="mfoot"><button class="btn" onclick="setModal(null)">Cancel</button>${!unassigned.length?`<button class="btn btn-p" onclick="openNewStudent('${classId}')">+ New student</button>`:''}</div>
   </div>`);
 }
-
+ 
 function addToClass(classId){
   const sid=document.getElementById('stuSel')?.value;if(!sid)return;
   const s=APP.students.find(x=>x.id===sid);if(s)s.classId=classId;
   saveAll();setModal(null);render();
 }
-
+ 
 function removeFromClass(sid){
   if(!confirm('Remove student from class?'))return;
   const s=APP.students.find(x=>x.id===sid);if(s)s.classId=null;
   saveAll();render();
 }
-
+ 
 function openNewStudent(classId){
   setModal(`<div class="modal" style="max-width:400px">
     <div class="modal-h"><div class="modal-title">New student</div><button class="mclose" onclick="setModal(null)">×</button></div>
@@ -1543,7 +2020,7 @@ function saveNewStudent(classId){
   APP.experiences[stu.id]=[];
   saveAll();setModal(null);render();
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  PDF / PRINT
 // ══════════════════════════════════════════════════
@@ -1557,7 +2034,7 @@ function printPDF(sid){
   const cls=APP.classes.find(cc=>cc.id===stu.classId);
   const totalFiles=list.reduce((n,e)=>n+(e.files||[]).length,0);
   const logoHtml=APP.logoUrl?`<img src="${APP.logoUrl}" class="pdf-logo" alt="Logo">`:`<div class="pdf-logo-ph">🏫</div>`;
-
+ 
   const expRows=list.map(e=>{
     const t=ET[e.type]||{};
     const strands=[e.creativity&&'C',e.activity&&'A',e.service&&'S'].filter(Boolean).join(', ');
@@ -1572,7 +2049,7 @@ function printPDF(sid){
       <td>${fc?`📎 ${fc}`:'—'}</td>
     </tr>`
   }).join('');
-
+ 
   const loItems=LOs.map((lo,i)=>{
     const isMet=met[i];
     const rel=list.filter(e=>(e.los||{})[lo.id]);
@@ -1589,7 +2066,7 @@ function printPDF(sid){
       ${allFiles.length?`<div class="pdf-lo-files">📎 ${allFiles.length} evidence file${allFiles.length!==1?'s':''} attached in Drive</div>`:''}
     </div>`
   }).join('');
-
+ 
   const reqRows=[
     {label:'Single experiences',       type:'single',  y12:6,y13:4},
     {label:'Short (8 weeks)',           type:'short',   y12:2,y13:1},
@@ -1606,7 +2083,7 @@ function printPDF(sid){
       <td class="${r.y13===0?'':y13ok?'pdf-rmet':'pdf-rno'}">${r.y13===0?'—':y13d+' '+(y13ok?'✓':'✗')}</td>
     </tr>`
   }).join('');
-
+ 
   const html=`<div class="pdf-wrap">
     <div class="pdf-hdr">
       ${logoHtml}
@@ -1647,14 +2124,14 @@ function printPDF(sid){
     </div>
     <div class="pdf-foot"><span>CAS Portfolio Tracker · IB CAS 2017</span><span>Generated ${today}</span></div>
   </div>`;
-
+ 
   const win=window.open('','_blank','width=920,height=750');
   // Extract PDF-specific CSS from the style block
   const styleEl=document.querySelector('style');
   const fullCss=styleEl?styleEl.textContent:'';
   const pdfCssStart=fullCss.indexOf('/* ── PDF PRINT ──');
   const pdfCss=pdfCssStart>=0?fullCss.slice(pdfCssStart):'';
-
+ 
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
   <title>CAS Review — ${esc(stu.name)}</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
@@ -1678,7 +2155,7 @@ function printPDF(sid){
   </body></html>`);
   win.document.close();
 }
-
+ 
 // ══════════════════════════════════════════════════
 //  BOOT
 // ══════════════════════════════════════════════════
@@ -1692,8 +2169,9 @@ function boot(){
       .catch(()=>dot('err','Offline — local data only'));
   }
 }
-
+ 
 boot();
 </script>
 </body>
 </html>
+ 
