@@ -1016,40 +1016,29 @@ function renderStudentHome(){
   const sid=APP.myStudentId;
   const stu=APP.students.find(s=>s.id===sid);
   const list=expsFor(sid);
-  const metApproved=loMetApproved(sid);
-  const totalMet=metApproved.filter(Boolean).length;
   const feedbackItems=list.filter(e=>expStatus(e)==='feedback');
   const pendingItems=list.filter(e=>expStatus(e)==='pending');
-  const tab=APP.studentTab||'experience';
  
   document.getElementById('root').innerHTML=`
   <div class="main">
     ${renderStudentPicker()}
     <div class="ptitle">
       <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS 2017 · ${esc(stu?stu.name:'')}</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button>
-        <button class="btn btn-p" onclick="openAddExp('${sid}')">+ Add experience</button>
-      </div>
+      <button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button>
     </div>
  
-    ${feedbackItems.length?`<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:var(--rl);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;cursor:pointer" onclick="APP.studentTab='pending';renderStudentHome()">
+    ${feedbackItems.length?`<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:var(--rl);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
       <span style="font-size:18px">↩</span>
       <div style="flex:1"><div style="font-weight:600;font-size:14px;color:#991b1b">${feedbackItems.length} experience${feedbackItems.length>1?'s have':' has'} received teacher feedback</div>
-      <div style="font-size:13px;color:var(--tx2)">Click here or open the Pending tab to review and resubmit.</div></div>
+      <div style="font-size:13px;color:var(--tx2)">Open the relevant experience slot below to read feedback and resubmit.</div></div>
     </div>`:''}
  
-    <div class="tabs" style="margin-bottom:20px">
-      <button class="tab ${tab==='experience'?'on':''}" onclick="APP.studentTab='experience';renderStudentHome()">Experience</button>
-      <button class="tab ${tab==='evidence'?'on':''}" onclick="APP.studentTab='evidence';renderStudentHome()">Evidence</button>
-      <button class="tab ${tab==='pending'?'on':''}" onclick="APP.studentTab='pending';renderStudentHome()">Pending ${pendingItems.length+feedbackItems.length?`<span style="background:#f59e0b;color:#000;font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;margin-left:3px">${pendingItems.length+feedbackItems.length}</span>`:''}</button>
-      <button class="tab ${tab==='los'?'on':''}" onclick="APP.studentTab='los';renderStudentHome()">LOs <span style="font-size:12px;font-weight:600;margin-left:3px;color:${tab==='los'?'inherit':'var(--grn)'}">${totalMet}/7</span></button>
-    </div>
+    ${pendingItems.length?`<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--rl);padding:10px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:16px">⏳</span>
+      <div style="font-size:13px;color:#92400e"><strong>${pendingItems.length} submission${pendingItems.length>1?'s':''} awaiting teacher approval.</strong></div>
+    </div>`:''}
  
-    ${tab==='experience' ? renderExpTab(sid,list) : ''}
-    ${tab==='evidence'   ? renderEvidenceTab(sid,list) : ''}
-    ${tab==='pending'    ? renderPendingTab(sid,list) : ''}
-    ${tab==='los'        ? renderLOsTab(sid,list,metApproved) : ''}
+    ${renderExpTab(sid,list)}
   </div>`;
 }
  
@@ -1065,12 +1054,9 @@ function renderExpTab(sid,list){
         return`<button class="sub-tab ${type===t?'on':''}" onclick="APP.studentExpType='${t}';APP._openExpId=null;renderStudentHome()">${ET[t].label.split(' ')[0]} <span style="opacity:.75">${n}/${total}</span></button>`
       }).join('')}
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
-      <div>
-        <div style="font-family:'DM Serif Display',serif;font-size:17px">${ET[type].label}</div>
-        <div style="font-size:13px;color:var(--tx3)">Tap a filled slot to view · Tap an empty slot to add</div>
-      </div>
-      <button class="btn btn-p btn-sm" onclick="openAddExp('${sid}')">+ Add</button>
+    <div style="margin-bottom:14px">
+      <div style="font-family:'DM Serif Display',serif;font-size:17px">${ET[type].label}</div>
+      <div style="font-size:13px;color:var(--tx3)">Tap a filled slot to view · Empty slots fill as you add experiences</div>
     </div>
     <div class="exp-slot-grid" style="margin-bottom:18px">
       ${Array.from({length:slots},(_,i)=>{
@@ -1085,9 +1071,8 @@ function renderExpTab(sid,list){
             <span class="slot-label">${esc(exp.name.length>9?exp.name.slice(0,8)+'…':exp.name)}</span>
           </div>`;
         }
-        return`<div class="exp-slot slot-empty" onclick="openAddExp('${sid}')" title="Add experience ${i+1}">
+        return`<div class="exp-slot slot-empty" style="cursor:default" title="Empty slot ${i+1}">
           <span class="slot-num" style="color:var(--bdr2)">${i+1}</span>
-          <span class="slot-icon" style="color:var(--bdr2)">+</span>
         </div>`;
       }).join('')}
     </div>
@@ -2106,3 +2091,5 @@ boot();
 </body>
 </html>
  
+
+
