@@ -1,3 +1,6 @@
+as portfolio · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -266,16 +269,22 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
  
 /* Experience slot grid */
 .exp-slot-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
-.exp-slot{width:52px;height:52px;border-radius:var(--r);border:2px solid var(--bdr);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--tx3);cursor:pointer;transition:all .15s;background:var(--surf);position:relative}
-.exp-slot:hover{border-color:var(--bdr2);box-shadow:var(--sh)}
-.exp-slot.slot-met{background:#f0faf2;border-color:#16a34a;color:#16a34a}
-.exp-slot.slot-pending{background:#fef3c7;border-color:#f59e0b;color:#92400e}
-.exp-slot.slot-feedback{background:#fee2e2;border-color:#dc2626;color:#991b1b}
-.exp-slot.slot-draft{background:var(--blu-bg);border-color:var(--blu);color:var(--blu)}
-.exp-slot.slot-empty{background:var(--surf2);border-color:var(--bdr);border-style:dashed;color:var(--tx3)}
-.exp-slot .slot-num{font-size:16px;font-weight:700;line-height:1}
-.exp-slot .slot-label{font-size:9px;margin-top:2px;text-align:center;line-height:1.2}
-.exp-slot .slot-icon{font-size:14px;line-height:1}
+.exp-slot{width:56px;height:56px;border-radius:var(--r);border:2px solid var(--bdr);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--tx3);cursor:pointer;transition:all .18s;background:var(--surf);position:relative;user-select:none}
+.exp-slot:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+/* Green = teacher approved */
+.exp-slot.slot-met{background:#16a34a;border-color:#15803d;color:#fff}
+/* Orange = sent for teacher approval / awaiting review */
+.exp-slot.slot-pending{background:#f59e0b;border-color:#d97706;color:#fff}
+/* Blue = teacher has returned feedback */
+.exp-slot.slot-feedback{background:#1a4f8a;border-color:#1e40af;color:#fff}
+/* Red = working on / started but not submitted */
+.exp-slot.slot-draft{background:#dc2626;border-color:#b91c1c;color:#fff}
+/* Grey dashed = empty, clickable to add */
+.exp-slot.slot-empty{background:var(--surf2);border-color:var(--bdr2);border-style:dashed;color:var(--tx3)}
+.exp-slot.slot-empty:hover{background:#fdf0e8;border-color:var(--acc);color:var(--acc)}
+.exp-slot .slot-num{font-size:15px;font-weight:700;line-height:1}
+.exp-slot .slot-label{font-size:8px;margin-top:2px;text-align:center;line-height:1.2;max-width:50px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.exp-slot .slot-icon{font-size:13px;line-height:1}
  
 /* Student sub-tabs */
 .sub-tabs{display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap}
@@ -1054,30 +1063,60 @@ function renderExpTab(sid,list){
         return`<button class="sub-tab ${type===t?'on':''}" onclick="APP.studentExpType='${t}';APP._openExpId=null;renderStudentHome()">${ET[t].label.split(' ')[0]} <span style="opacity:.75">${n}/${total}</span></button>`
       }).join('')}
     </div>
-    <div style="margin-bottom:14px">
-      <div style="font-family:'DM Serif Display',serif;font-size:17px">${ET[type].label}</div>
-      <div style="font-size:13px;color:var(--tx3)">Tap a filled slot to view · Empty slots fill as you add experiences</div>
+ 
+    <div style="margin-bottom:16px">
+      <div style="font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:2px">${ET[type].label}</div>
+      <div style="font-size:13px;color:var(--tx3)">Tap a slot to open it · Grey slots are available to fill</div>
     </div>
-    <div class="exp-slot-grid" style="margin-bottom:18px">
+ 
+    <div class="exp-slot-grid" style="margin-bottom:14px">
       ${Array.from({length:slots},(_,i)=>{
         const exp=typeList[i];
         if(exp){
           const st=expStatus(exp);
+          // Colour map: red=draft(working on), orange=pending(awaiting approval), blue=feedback, green=met
           const cls=st==='met'?'slot-met':st==='pending'?'slot-pending':st==='feedback'?'slot-feedback':'slot-draft';
-          const icon=st==='met'?'✓':st==='pending'?'⏳':st==='feedback'?'↩':'✎';
+          const icon=st==='met'?'✓':st==='pending'?'⏳':st==='feedback'?'✉':st==='draft'?'✎':'';
           return`<div class="exp-slot ${cls}" onclick="openExpDetail('${sid}','${exp.id}')" title="${esc(exp.name)}">
             <span class="slot-num">${i+1}</span>
             <span class="slot-icon">${icon}</span>
             <span class="slot-label">${esc(exp.name.length>9?exp.name.slice(0,8)+'…':exp.name)}</span>
           </div>`;
         }
-        return`<div class="exp-slot slot-empty" style="cursor:default" title="Empty slot ${i+1}">
-          <span class="slot-num" style="color:var(--bdr2)">${i+1}</span>
+        // Empty slot — clickable, opens add experience form pre-set to this type
+        return`<div class="exp-slot slot-empty" onclick="openAddExpType('${sid}','${type}')" title="Add experience ${i+1}">
+          <span class="slot-num">${i+1}</span>
+          <span class="slot-icon" style="font-size:16px">+</span>
         </div>`;
       }).join('')}
     </div>
+ 
+    <!-- Colour legend -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
+        <div style="width:14px;height:14px;border-radius:3px;background:#dc2626"></div>Working on
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
+        <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b"></div>Sent for approval
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
+        <div style="width:14px;height:14px;border-radius:3px;background:#1a4f8a"></div>Feedback received
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
+        <div style="width:14px;height:14px;border-radius:3px;background:#16a34a"></div>Approved
+      </div>
+    </div>
+ 
     <div id="expDetailArea"></div>
   </div>`;
+}
+ 
+function openAddExpType(sid, type){
+  // Pre-select the experience type in the modal
+  _editSid=sid; _editEid=null; _focusLoId=null;
+  // Temporarily set default type for the modal
+  APP._defaultExpType=type;
+  buildExpModal();
 }
  
 function openExpDetail(sid,expId){
@@ -1088,42 +1127,86 @@ function openExpDetail(sid,expId){
   const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
   if(!exp)return;
   const status=expStatus(exp);
-  area.innerHTML=`<div class="card" style="animation:fadeIn .15s ease">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-      <div>
-        <div style="font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:5px">${esc(exp.name)}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${statusPill(status)}
-          <span class="badge ${ET[exp.type]?.bc||''}">${ET[exp.type]?.label||exp.type}</span>
-          <span class="badge b-unmet">${esc(exp.year||'')}</span>
-          ${[exp.creativity&&'<span class="badge b-c">Creativity</span>',exp.activity&&'<span class="badge b-a">Activity</span>',exp.service&&'<span class="badge b-s">Service</span>'].filter(Boolean).join('')}
+ 
+  // Status-specific banner colours and messages
+  const banners={
+    draft:{bg:'#dc2626',text:'#fff',icon:'✎',label:'Working on',msg:'Complete your details and reflections, then submit for teacher approval when ready.'},
+    pending:{bg:'#f59e0b',text:'#fff',icon:'⏳',label:'Awaiting approval',msg:'This has been sent to your teacher for review. Check back for feedback.'},
+    feedback:{bg:'#1a4f8a',text:'#fff',icon:'✉',label:'Feedback received',msg:'Your teacher has reviewed this and returned it. Read the feedback below and update your response.'},
+    met:{bg:'#16a34a',text:'#fff',icon:'✓',label:'Approved',msg:'Your teacher has approved this experience. It counts towards your CAS record.'},
+  };
+  const b=banners[status]||banners.draft;
+ 
+  area.innerHTML=`
+  <div style="border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh2);margin-bottom:4px;animation:fadeIn .15s ease">
+ 
+    <!-- Colour-coded status banner -->
+    <div style="background:${b.bg};padding:12px 18px;display:flex;align-items:center;gap:12px">
+      <span style="font-size:22px;color:${b.text}">${b.icon}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:14px;color:${b.text}">${b.label}</div>
+        <div style="font-size:13px;color:${b.text};opacity:.85">${b.msg}</div>
+      </div>
+      <button onclick="APP._openExpId=null;document.getElementById('expDetailArea').innerHTML=''" style="background:rgba(255,255,255,.2);border:none;border-radius:7px;padding:5px 10px;color:${b.text};cursor:pointer;font-size:16px;line-height:1">✕</button>
+    </div>
+ 
+    <!-- Body -->
+    <div style="background:var(--surf);padding:18px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;margin-bottom:6px">${esc(exp.name)}</div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap">
+            <span class="badge ${ET[exp.type]?.bc||''}">${ET[exp.type]?.label||exp.type}</span>
+            <span class="badge b-unmet">${esc(exp.year||'')}</span>
+            ${[exp.creativity&&'<span class="badge b-c">Creativity</span>',exp.activity&&'<span class="badge b-a">Activity</span>',exp.service&&'<span class="badge b-s">Service</span>'].filter(Boolean).join('')}
+          </div>
+        </div>
+        <!-- Primary action buttons -->
+        <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:flex-start">
+          ${status==='draft'?`
+            <button class="btn btn-sm" onclick="openEditExp('${exp.id}')">✎ Continue editing</button>
+            <button class="btn btn-sm" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitForApproval('${sid}','${exp.id}')">Send for approval →</button>
+          `:''}
+          ${status==='feedback'?`
+            <button class="btn btn-sm" onclick="openEditExp('${exp.id}')">✎ Edit &amp; update</button>
+            <button class="btn btn-sm" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitForApproval('${sid}','${exp.id}')">Resubmit →</button>
+          `:''}
+          ${status==='pending'?`<span style="font-size:13px;color:#92400e;padding:6px 12px;background:#fef3c7;border-radius:8px">Awaiting teacher review</span>`:''}
+          ${status==='met'?`<span style="font-size:13px;color:#16a34a;padding:6px 12px;background:#f0faf2;border-radius:8px;font-weight:600">✓ Approved by teacher</span>`:''}
         </div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        ${status==='draft'||status==='feedback'?`<button class="btn btn-sm btn-p" onclick="submitForApproval('${sid}','${exp.id}')">Submit for approval</button>`:''}
-        ${status==='draft'||status==='feedback'?`<button class="btn btn-sm" onclick="openEditExp('${exp.id}')">Edit</button>`:''}
-        <button class="btn btn-sm btn-ghost" onclick="APP._openExpId=null;document.getElementById('expDetailArea').innerHTML=''">✕</button>
+ 
+      <div style="font-size:13px;color:var(--tx3);margin-bottom:12px">${[exp.when,exp.where,exp.who].filter(Boolean).map(esc).join(' · ')}</div>
+      ${exp.what?`<div style="font-size:14px;color:var(--tx2);margin-bottom:16px;line-height:1.6;padding:12px;background:var(--surf2);border-radius:8px">${esc(exp.what)}</div>`:''}
+ 
+      <!-- Teacher feedback (prominent when present) -->
+      ${status==='feedback'&&exp.teacherFeedback?`
+        <div style="background:#eff6ff;border:2px solid #1a4f8a;border-radius:10px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#1a4f8a;margin-bottom:6px">✉ Teacher feedback — please read and respond</div>
+          <div style="font-size:14px;color:var(--tx);line-height:1.6">${esc(exp.teacherFeedback)}</div>
+        </div>`:''}
+ 
+      <!-- LO reflections -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:8px">Learning outcome reflections</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+        ${LOs.filter(lo=>ET[exp.type]?.los?.includes(lo.id)).map(lo=>{
+          const d=(exp.los||{})[lo.id]||{};
+          return`<div style="padding:10px 12px;background:${d.met?'#f0faf2':'var(--surf2)'};border-radius:8px;border:1px solid ${d.met?'#6ee7b7':'var(--bdr)'}">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:${d.reflection?'5px':'0'}">
+              <span class="badge ${d.met?'b-met':'b-unmet'}" style="font-size:11px">${lo.label}${d.met?' ✓':''}</span>
+              <span style="font-size:13px;font-weight:600">${lo.title}</span>
+            </div>
+            ${d.reflection?`<div style="font-size:13px;color:var(--tx2);font-style:italic">"${esc(d.reflection)}"</div>`
+            :`<div style="font-size:12px;color:var(--tx3)">No reflection written yet — ${status==='draft'||status==='feedback'?'click Edit to add one':'reflection missing'}</div>`}
+          </div>`
+        }).join('')}
       </div>
+ 
+      <!-- Evidence files -->
+      ${buildEvPanel(sid,exp.id,status==='draft'||status==='feedback')}
     </div>
-    <div style="font-size:13px;color:var(--tx3);margin-bottom:10px">${[exp.when,exp.where,exp.who].filter(Boolean).map(esc).join(' · ')}</div>
-    ${exp.what?`<div style="font-size:14px;color:var(--tx2);margin-bottom:14px;line-height:1.6">${esc(exp.what)}</div>`:''}
-    ${status==='feedback'&&exp.teacherFeedback?`<div class="feedback-box" style="margin-bottom:14px"><div class="feedback-label">Teacher feedback</div>${esc(exp.teacherFeedback)}</div>`:''}
-    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:8px">Learning outcome reflections</div>
-    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
-      ${LOs.filter(lo=>ET[exp.type]?.los?.includes(lo.id)).map(lo=>{
-        const d=(exp.los||{})[lo.id]||{};
-        return`<div style="padding:9px 12px;background:${d.met?'#f0faf2':'var(--surf2)'};border-radius:8px;border:1px solid ${d.met?'#6ee7b7':'var(--bdr)'}">
-          <div style="display:flex;align-items:center;gap:7px;margin-bottom:${d.reflection?'5px':'0'}">
-            <span class="badge ${d.met?'b-met':'b-unmet'}" style="font-size:11px">${lo.label}${d.met?' ✓':''}</span>
-            <span style="font-size:13px;font-weight:600">${lo.title}</span>
-          </div>
-          ${d.reflection?`<div style="font-size:13px;color:var(--tx2);font-style:italic">"${esc(d.reflection)}"</div>`:''}
-        </div>`
-      }).join('')}
-    </div>
-    ${buildEvPanel(sid,exp.id,status==='draft'||status==='feedback')}
   </div>
-  <style>@keyframes fadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}</style>`;
+  <style>@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}</style>`;
 }
  
 function renderEvidenceTab(sid,list){
@@ -1678,7 +1761,8 @@ function openEditExp(eid){
  
 function buildExpModal(){
   const base=_editEid?(APP.experiences[_editSid]||[]).find(e=>e.id===_editEid):null;
-  const expType=(base&&base.type)||'single';
+  const expType=(base&&base.type)||(APP._defaultExpType||'single');
+  APP._defaultExpType=null; // consume it
   setModal(`<div class="modal">
     <div class="modal-h">
       <div class="modal-title">${base?'Edit experience':'Add CAS experience'}</div>
@@ -2090,6 +2174,3 @@ boot();
 </script>
 </body>
 </html>
- 
-
-
