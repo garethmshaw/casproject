@@ -90,6 +90,7 @@ input[type=checkbox]{width:16px;height:16px;accent-color:var(--grn);cursor:point
 .b-short{background:var(--grn-bg);color:var(--grn)}
 .b-extended{background:var(--blu-bg);color:var(--blu)}
 .b-project{background:var(--pur-bg);color:var(--pur)}
+.b-charity{background:#fce7f3;color:#9d174d}
 .b-c{background:#fce7f3;color:#9d174d}
 .b-a{background:var(--amb-bg);color:var(--amb)}
 .b-s{background:var(--grn-bg);color:var(--grn)}
@@ -368,6 +369,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 .pdf-tb{display:inline-block;padding:2px 7px;border-radius:10px;font-size:8pt;font-weight:600}
 .pdf-tb-s{background:#fef3c7;color:#92400e}.pdf-tb-sh{background:#d8f3dc;color:#2d6a4f}
 .pdf-tb-e{background:#dbeafe;color:#1a4f8a}.pdf-tb-p{background:#ede9fe;color:#5b21b6}
+.pdf-tb-c{background:#fce7f3;color:#9d174d}
 
 @media(max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}.fr,.fr3{grid-template-columns:1fr}.main{padding:14px}.bar{padding:0 14px}.ev-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
 @media(max-width:460px){.stats{grid-template-columns:1fr 1fr}}
@@ -465,7 +467,7 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 //  CONFIG
 // ══════════════════════════════════════════════════
 const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
-const GEMINI_API_KEY = 'AIzaSyCx_bIIhMm-RM8GaH9uo1cN1ZRBtdQM5fs'; // Get from https://aistudio.google.com/app/apikey
+const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE'; // Get from https://aistudio.google.com/app/apikey
 
 // ══════════════════════════════════════════════════
 //  CONSTANTS
@@ -480,10 +482,11 @@ const LOs=[
   {id:'lo7',label:'LO7',title:'Ethics & Choices',          desc:'Recognize and consider the ethics of choices and actions.'},
 ];
 const ET={
-  single:  {label:'Single Experience',   los:['lo1','lo2'],                              y12:6,y13:4,bc:'b-single',  ptbc:'pdf-tb-s'},
-  short:   {label:'Short (8 weeks)',      los:['lo1','lo2','lo3','lo4','lo5'],           y12:2,y13:1,bc:'b-short',   ptbc:'pdf-tb-sh'},
-  extended:{label:'Extended (6 months)', los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:1,bc:'b-extended',ptbc:'pdf-tb-e'},
-  project: {label:'CAS Project',          los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:0,bc:'b-project', ptbc:'pdf-tb-p'},
+  single:  {label:'Single Experience',    los:['lo1','lo2'],                              y12:6,y13:4, bc:'b-single',  ptbc:'pdf-tb-s',  hasProposal:false},
+  short:   {label:'Short (8 weeks)',       los:['lo1','lo2','lo3','lo4','lo5'],           y12:2,y13:1, bc:'b-short',   ptbc:'pdf-tb-sh', hasProposal:false},
+  extended:{label:'Extended (6 months)',   los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:1,bc:'b-extended',ptbc:'pdf-tb-e',  hasProposal:false},
+  project: {label:'CAS Project',           los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:0,bc:'b-project', ptbc:'pdf-tb-p',  hasProposal:true, proposalType:'project'},
+  charity: {label:'Charity Fundraiser',    los:['lo1','lo2','lo3','lo4','lo5','lo6','lo7'],y12:1,y13:1,bc:'b-charity', ptbc:'pdf-tb-c',  hasProposal:true, proposalType:'charity'},
 };
 
 // File type helpers
@@ -535,6 +538,7 @@ const DUMMY={
     ],
     s3:[
       {id:'e3a',studentId:'s3',type:'project',year:'Y12',creativity:true,activity:false,service:true,name:'Plastic-Free Campus Campaign',what:'Led a school-wide campaign to eliminate single-use plastic: waste audit, petition, supplier negotiation with the canteen.',when:'Oct 2024–Jan 2025',where:'School campus',who:'Eco committee, 5 volunteers',savedAt:'2025-01-31',files:[],status:'met',submittedAt:'2025-02-02',teacherFeedback:'',
+       proposal:{title:'Plastic-Free Campus Campaign',names:'Sofia Reyes, Kai Tanaka, Priya Singh, Leo Mensah',desc:'A school-wide initiative to eliminate single-use plastics from campus, including a waste audit, student petition, and negotiation with the canteen supplier to switch to compostable packaging.',strandC:false,strandA:false,strandS:true,rationale:'We noticed excessive single-use plastic in the canteen and wanted to take tangible action aligned with SDG 14. The project grew from our environmental science unit and a desire to create lasting change.',goals:'1. Conduct a campus waste audit. 2. Reduce canteen single-use plastic by 50%. 3. Raise awareness among 200+ students via assembly presentation.',plan:'Weeks 1–2: Waste audit and data collection. Weeks 3–4: Research alternatives and draft petition. Weeks 5–8: Canteen negotiations. Weeks 9–12: Assembly presentation and monitoring.',risk:'Canteen supplier may refuse to change. Mitigation: approach school management with business case and cost analysis.',challenges:'Keeping the team motivated over 12 weeks. Plan to hold weekly check-ins and celebrate milestones.',reflectionPlan:'Weekly journal entries from each team member, shared on a collaborative Google Doc.',demo:'Assembly presentation and short video screened at the Year 12 Exhibition.',savedAt:'2024-10-05'},
        los:{lo1:{met:true,reflection:'My public speaking strength proved essential. Negotiation with adults was the biggest growth area.',evidence:'Campaign materials, slides'},lo2:{met:true,reflection:'Conducting a formal waste audit was a completely new skill.',evidence:'Waste audit report'},lo3:{met:true,reflection:'Mapped the entire 12-week campaign with a Gantt chart before starting.',evidence:'Project plan'},lo4:{met:true,reflection:'Kept the team motivated over three months despite slow institutional change.',evidence:'Meeting minutes'},lo5:{met:true,reflection:'Delegating to volunteers with different commitment levels was challenging but rewarding.',evidence:'Role assignments'},lo6:{met:true,reflection:'Connected local plastic reduction to global ocean health and SDG 14.',evidence:'Assembly presentation'},lo7:{met:true,reflection:'Researched greenwashing to ensure our campaign was evidence-based.',evidence:'Research notes'}}},
     ],
     s4:[
@@ -973,10 +977,11 @@ function renderReqsView(sid){
   const list=expsFor(sid);
   const bty=(t,y)=>list.filter(e=>e.type===t&&e.year===y).length;
   const rows=[
-    {label:'Single experiences',       type:'single',  y12:6,y13:4,note:'10 max per 18 months'},
-    {label:'Short experiences (8w)',    type:'short',   y12:2,y13:1,note:'2 per 18 months'},
-    {label:'Extended experiences (6m)',type:'extended',y12:1,y13:1,note:'1 per 18 months'},
-    {label:'CAS Project',              type:'project', y12:1,y13:0,note:'Complete before end Y12'},
+    {label:'Single experiences',        type:'single',  y12:6,y13:4,note:'10 max per 18 months'},
+    {label:'Short experiences (8w)',     type:'short',   y12:2,y13:1,note:'2 per 18 months'},
+    {label:'Extended experiences (6m)', type:'extended',y12:1,y13:1,note:'1 per 18 months'},
+    {label:'CAS Project',               type:'project', y12:1,y13:0,note:'Complete before end Y12'},
+    {label:'Charity Fundraiser',         type:'charity', y12:1,y13:1,note:'Proposal form required'},
   ];
   return`
   <div class="card" style="margin-bottom:12px">
@@ -1004,7 +1009,7 @@ function renderReqsView(sid){
 
 function portfolioStats(sid){
   const list=expsFor(sid);const met=losMet(list);
-  const c={single:0,short:0,extended:0,project:0};
+  const c={single:0,short:0,extended:0,project:0,charity:0};
   list.forEach(e=>{if(c[e.type]!==undefined)c[e.type]++});
   return{list,met,c};
 }
@@ -1082,7 +1087,7 @@ function renderStudentView(){
 // LO targets (from teacher spec): LO1=16,LO2=16,LO3=6,LO4=6,LO5=6,LO6=3,LO7=3
 const LO_TARGETS={lo1:16,lo2:16,lo3:6,lo4:6,lo5:6,lo6:3,lo7:3};
 // Experience slot counts per type
-const EXP_SLOTS={single:10,short:3,extended:2,project:1};
+const EXP_SLOTS={single:10,short:3,extended:2,project:1,charity:1};
 
 function renderStudentHome(){
   const sid=APP.myStudentId;
@@ -1176,11 +1181,26 @@ function renderExpTab(sid,list){
 }
 
 function openAddExpType(sid, type){
-  // Pre-select the experience type in the modal
   _editSid=sid; _editEid=null; _focusLoId=null;
-  // Temporarily set default type for the modal
   APP._defaultExpType=type;
-  buildExpModal();
+  // For project and charity, show proposal form first
+  if(ET[type]?.hasProposal){
+    // Create a placeholder experience first so proposal has an ID to attach to
+    const exp={
+      id:uid(), studentId:sid, type, year:'Y12',
+      creativity:false, activity:false, service:false,
+      name:'', what:'', when:'', where:'', who:'',
+      recordingUrl:'', files:[], status:'draft',
+      submittedAt:'', teacherFeedback:'', proposal:{},
+      los:{}, savedAt:new Date().toISOString(),
+    };
+    if(!APP.experiences[sid])APP.experiences[sid]=[];
+    APP.experiences[sid].push(exp);
+    saveAll();
+    openProposalForm(sid, exp.id);
+  } else {
+    buildExpModal();
+  }
 }
 
 function openExpDetail(sid,expId){
@@ -1231,6 +1251,7 @@ function openExpDetail(sid,expId){
             <button class="btn btn-sm" onclick="openEditExp('${exp.id}')">✎ Continue editing</button>
             <button class="btn btn-sm" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitForApproval('${sid}','${exp.id}')">Send for approval →</button>
           `:''}
+          ${ET[exp.type]?.hasProposal?`<button class="btn btn-sm" style="background:#9d174d;color:#fff;border-color:#9d174d" onclick="openProposalForm('${sid}','${exp.id}')">📋 ${exp.proposal&&exp.proposal.title?'View proposal':'Complete proposal'}</button>`:''}
           ${status==='feedback'?`
             <button class="btn btn-sm" onclick="openEditExp('${exp.id}')">✎ Edit &amp; update</button>
             <button class="btn btn-sm" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitForApproval('${sid}','${exp.id}')">Resubmit →</button>
@@ -1242,6 +1263,20 @@ function openExpDetail(sid,expId){
 
       <div style="font-size:13px;color:var(--tx3);margin-bottom:12px">${[exp.when,exp.where,exp.who].filter(Boolean).map(esc).join(' · ')}</div>
       ${exp.recordingUrl?`<div style="margin-bottom:12px"><a href="${esc(exp.recordingUrl)}" target="_blank" rel="noopener" class="rec-link"><span style="font-size:16px">▶</span><span class="rec-badge">REC</span>View recording</a></div>`:''}
+
+      <!-- Proposal summary for project/charity types -->
+      ${ET[exp.type]?.hasProposal?`<div style="background:#fce7f3;border:1px solid #f9a8d4;border-radius:10px;padding:13px 16px;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9d174d;margin-bottom:4px">📋 ${ET[exp.type].label} Proposal</div>
+          <button class="btn btn-xs" style="background:#9d174d;color:#fff;border-color:#9d174d;font-size:11px" onclick="openProposalForm('${sid}','${exp.id}')">${exp.proposal&&exp.proposal.title?'Edit proposal':'Complete proposal →'}</button>
+        </div>
+        ${exp.proposal&&exp.proposal.title?`
+          <div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px">${esc(exp.proposal.title)}</div>
+          ${exp.proposal.desc?`<div style="font-size:13px;color:var(--tx2);line-height:1.5">${esc(exp.proposal.desc.length>180?exp.proposal.desc.slice(0,180)+'…':exp.proposal.desc)}</div>`:''}
+          ${exp.proposal.names?`<div style="font-size:12px;color:var(--tx3);margin-top:5px">Participants: ${esc(exp.proposal.names)}</div>`:''}
+        `:`<div style="font-size:13px;color:#9d174d;font-style:italic">Proposal not yet completed — click "Complete proposal" to fill in the form.</div>`}
+      </div>`:''}
+
       ${exp.what?`<div style="font-size:14px;color:var(--tx2);margin-bottom:16px;line-height:1.6;padding:12px;background:var(--surf2);border-radius:8px">${esc(exp.what)}</div>`:''}
       ${status==='feedback'&&exp.teacherFeedback?`
         <div style="background:#eff6ff;border:2px solid #1a4f8a;border-radius:10px;padding:14px 16px;margin-bottom:16px">
@@ -1716,11 +1751,11 @@ function renderClassList(){
 function renderOverviewTable(){
   if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">No classes yet</div></div>`;
   return`<div class="card ov-wrap"><table class="ov-table"><thead><tr>
-    <th>Student</th><th>Year</th><th>Single</th><th>Short</th><th>Ext.</th><th>Proj.</th><th>Files</th>
+    <th>Student</th><th>Year</th><th>Single</th><th>Short</th><th>Ext.</th><th>Proj.</th><th>Charity</th><th>Files</th>
     ${LOs.map(lo=>`<th>${lo.label}</th>`).join('')}
   </tr></thead><tbody>
   ${APP.classes.map(cls=>`
-    <tr class="cls-r"><td colspan="${7+LOs.length}">${esc(cls.name)}</td></tr>
+    <tr class="cls-r"><td colspan="${8+LOs.length}">${esc(cls.name)}</td></tr>
     ${APP.students.filter(s=>s.classId===cls.id).map(s=>{
       const exps=expsFor(s.id);const met=losMet(exps);
       const fc=exps.reduce((n,e)=>n+(e.files||[]).length,0);
@@ -1730,6 +1765,7 @@ function renderOverviewTable(){
         <td>${exps.filter(e=>e.type==='short').length}</td>
         <td>${exps.filter(e=>e.type==='extended').length}</td>
         <td>${exps.filter(e=>e.type==='project').length}</td>
+        <td>${exps.filter(e=>e.type==='charity').length}</td>
         <td>${fc}</td>
         ${met.map(m=>`<td class="${m?'ov-y':'ov-n'}">${m?'✓':'·'}</td>`).join('')}
       </tr>`
@@ -1787,6 +1823,7 @@ function renderTeacherStudent(){
       <div class="sc"><div class="sl">Short</div><div class="sv">${c.short}</div></div>
       <div class="sc"><div class="sl">Extended</div><div class="sv">${c.extended}</div></div>
       <div class="sc"><div class="sl">Project</div><div class="sv">${c.project}</div></div>
+      <div class="sc"><div class="sl">Charity</div><div class="sv">${c.charity}</div></div>
       <div class="sc hi"><div class="sl">LOs met</div><div class="sv">${met.filter(Boolean).length}/7</div></div>
     </div>
     <div class="tabs">
@@ -1934,6 +1971,7 @@ function saveExp(){
     status:existing?existing.status:'draft', // preserve status, new = draft
     submittedAt:existing?existing.submittedAt:'',
     teacherFeedback:existing?existing.teacherFeedback:'',
+    proposal:existing?existing.proposal||{}:{}, // preserve proposal
     los,savedAt:new Date().toISOString(),
   };
   if(!APP.experiences[_editSid])APP.experiences[_editSid]=[];
@@ -2034,7 +2072,7 @@ function printPDF(sid){
   const stu=APP.students.find(s=>s.id===sid);if(!stu)return;
   const list=expsFor(sid);
   const met=losMet(list);
-  const c={single:0,short:0,extended:0,project:0};
+  const c={single:0,short:0,extended:0,project:0,charity:0};
   list.forEach(e=>{if(c[e.type]!==undefined)c[e.type]++});
   const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
   const cls=APP.classes.find(cc=>cc.id===stu.classId);
@@ -2047,8 +2085,9 @@ function printPDF(sid){
     const strands=[e.creativity&&'C',e.activity&&'A',e.service&&'S'].filter(Boolean).join(', ');
     const metLOs=Object.entries(e.los||{}).filter(([,d])=>d.met).map(([k])=>k.replace('lo','LO')).join(', ');
     const fc=(e.files||[]).length;
+    const hasProposal=t.hasProposal&&e.proposal&&e.proposal.title;
     return`<tr>
-      <td><strong>${esc(e.name)}</strong><br><span style="color:#9e9389;font-size:8pt">${esc(e.when||'')}${e.where?' · '+esc(e.where):''}</span></td>
+      <td><strong>${esc(e.name)}</strong><br><span style="color:#9e9389;font-size:8pt">${esc(e.when||'')}${e.where?' · '+esc(e.where):''}${hasProposal?' · 📋 Proposal submitted':''}</span></td>
       <td><span class="pdf-tb ${t.ptbc||''}">${t.label||e.type}</span></td>
       <td>${esc(e.year||'')}</td>
       <td>${esc(strands)}</td>
@@ -2075,10 +2114,11 @@ function printPDF(sid){
   }).join('');
 
   const reqRows=[
-    {label:'Single experiences',       type:'single',  y12:6,y13:4},
-    {label:'Short (8 weeks)',           type:'short',   y12:2,y13:1},
-    {label:'Extended (6 months)',       type:'extended',y12:1,y13:1},
-    {label:'CAS Project',              type:'project', y12:1,y13:0},
+    {label:'Single experiences',        type:'single',  y12:6,y13:4},
+    {label:'Short (8 weeks)',            type:'short',   y12:2,y13:1},
+    {label:'Extended (6 months)',        type:'extended',y12:1,y13:1},
+    {label:'CAS Project',               type:'project', y12:1,y13:0},
+    {label:'Charity Fundraiser',          type:'charity', y12:1,y13:1},
   ].map(r=>{
     const y12d=list.filter(e=>e.type===r.type&&e.year==='Y12').length;
     const y13d=list.filter(e=>e.type===r.type&&e.year==='Y13').length;
@@ -2103,11 +2143,12 @@ function printPDF(sid){
       <div><div class="pdf-fl">Evidence files</div><div class="pdf-fv">${totalFiles} uploaded to Drive</div></div>
     </div>
     <div class="pdf-sec">Progress summary</div>
-    <div class="pdf-stats">
+    <div class="pdf-stats" style="grid-template-columns:repeat(6,1fr)">
       <div class="pdf-stat"><div class="pdf-stat-l">Single</div><div class="pdf-stat-v">${c.single}</div></div>
       <div class="pdf-stat"><div class="pdf-stat-l">Short</div><div class="pdf-stat-v">${c.short}</div></div>
       <div class="pdf-stat"><div class="pdf-stat-l">Extended</div><div class="pdf-stat-v">${c.extended}</div></div>
       <div class="pdf-stat"><div class="pdf-stat-l">Project</div><div class="pdf-stat-v">${c.project}</div></div>
+      <div class="pdf-stat"><div class="pdf-stat-l">Charity</div><div class="pdf-stat-v">${c.charity}</div></div>
       <div class="pdf-stat hi"><div class="pdf-stat-l">LOs met</div><div class="pdf-stat-v">${met.filter(Boolean).length}/7</div></div>
     </div>
     <div class="pdf-sec">Learning outcomes</div>
@@ -2117,6 +2158,23 @@ function printPDF(sid){
       <thead><tr><th>Experience</th><th>Type</th><th>Year</th><th>Strands</th><th>LOs met</th><th>Files</th></tr></thead>
       <tbody>${expRows}</tbody>
     </table>`:'<p style="font-size:10pt;color:#9e9389;font-style:italic">No experiences recorded.</p>'}
+
+    ${list.filter(e=>ET[e.type]?.hasProposal&&e.proposal&&e.proposal.title).length?`
+    <div class="pdf-sec">Proposal summaries</div>
+    ${list.filter(e=>ET[e.type]?.hasProposal&&e.proposal&&e.proposal.title).map(e=>`
+    <div style="border:1px solid #e2ddd5;border-radius:8px;padding:12px 14px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:8px;font-size:8.5pt;font-weight:700">${ET[e.type]?.label||e.type}</span>
+        <span style="font-size:11pt;font-weight:600">${esc(e.proposal.title)}</span>
+      </div>
+      ${e.proposal.names?`<div style="font-size:9pt;color:#6b6258;margin-bottom:5px"><strong>Participants:</strong> ${esc(e.proposal.names)}</div>`:''}
+      ${e.proposal.desc?`<div style="font-size:9pt;color:#1c1814;margin-bottom:5px"><strong>Description:</strong> ${esc(e.proposal.desc)}</div>`:''}
+      ${e.proposal.goals?`<div style="font-size:9pt;color:#1c1814;margin-bottom:5px"><strong>Goals:</strong> ${esc(e.proposal.goals)}</div>`:''}
+      ${e.proposal.plan?`<div style="font-size:9pt;color:#1c1814;margin-bottom:5px"><strong>Action plan:</strong> ${esc(e.proposal.plan)}</div>`:''}
+      ${e.proposal.demo?`<div style="font-size:9pt;color:#1c1814"><strong>Demonstration:</strong> ${esc(e.proposal.demo)}</div>`:''}
+    </div>`).join('')}
+    `:''}
+
     <div class="pdf-sec">Requirements check</div>
     <table class="pdf-req-table">
       <thead><tr><th>Type</th><th>Y12 min</th><th>Y12 done</th><th>Y13 min</th><th>Y13 done</th></tr></thead>
@@ -2240,6 +2298,131 @@ ${html}
 }
 
 // ══════════════════════════════════════════════════
+//  PROPOSAL FORM (CAS Project & Charity Fundraiser)
+// ══════════════════════════════════════════════════
+function openProposalForm(sid, expId){
+  const exp=expId?(APP.experiences[sid]||[]).find(e=>e.id===expId):null;
+  const type=exp?exp.type:(APP._defaultExpType||'project');
+  const isCharity=type==='charity';
+  const title=isCharity?'Charity Fundraiser Proposal Form':'CAS Project Proposal Form';
+  const proposal=exp?.proposal||{};
+
+  setModal(`<div class="modal" style="max-width:700px">
+    <div class="modal-h">
+      <div>
+        <div class="modal-title">${title}</div>
+        <div style="font-size:13px;color:var(--tx3);margin-top:2px">BISP · IB CAS 2017 · ${isCharity?'Charity Fundraiser':'CAS Project'}</div>
+      </div>
+      <button class="mclose" onclick="setModal(null)">×</button>
+    </div>
+
+    <div style="background:var(--surf2);border-radius:var(--r);padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--tx2)">
+      <strong>Minimum 3, maximum 5 participants.</strong> Note — this does not have to be just IB students. When complete, find a supervising teacher, present your project to them, and return the signed form to the CAS Coordinator for final approval.
+    </div>
+
+    <div class="msec">Project details</div>
+    <div class="fg"><label>Student name(s) — minimum 3, maximum 5</label>
+      <textarea id="pNames" style="min-height:60px" placeholder="List all student names involved">${esc(proposal.names||'')}</textarea>
+    </div>
+    <div class="fg"><label>Proposed ${isCharity?'Charity Fundraiser':'CAS Project'} title</label>
+      <input type="text" id="pTitle" value="${esc(proposal.title||exp?.name||'')}" placeholder="e.g. School Garden Restoration Project">
+    </div>
+    <div class="fg"><label>Project description — what do you plan to do, and what is the purpose?</label>
+      <textarea id="pDesc" style="min-height:90px" placeholder="Provide a brief overview of the project...">${esc(proposal.desc||exp?.what||'')}</textarea>
+    </div>
+    <div class="fg"><label>CAS strands (tick all that apply)</label>
+      <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pC" ${proposal.strandC?'checked':''}> Creativity</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pA" ${proposal.strandA?'checked':''}> Activity</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pS" ${proposal.strandS?'checked':''}> Service</label>
+      </div>
+    </div>
+
+    <div class="msec">Investigation &amp; rationale</div>
+    <div class="fg"><label>What inspired this project? Identify personal interests or community needs.</label>
+      <textarea id="pRationale" style="min-height:80px" placeholder="What inspired you to take on this project? How will it benefit others and help you grow?">${esc(proposal.rationale||'')}</textarea>
+    </div>
+
+    <div class="msec">Goals &amp; success criteria</div>
+    <div class="fg"><label>What do you hope to achieve? How will you measure success?</label>
+      <textarea id="pGoals" style="min-height:80px" placeholder="List your goals and how you will know you have achieved them...">${esc(proposal.goals||'')}</textarea>
+    </div>
+
+    <div class="msec">Action plan</div>
+    <div class="fg"><label>Timeline, key milestones, resources needed, and collaborators</label>
+      <textarea id="pPlan" style="min-height:100px" placeholder="Week 1: ... | Week 2–4: ... | Resources: ... | Collaborators: ...">${esc(proposal.plan||'')}</textarea>
+    </div>
+
+    <div class="msec">Risk assessment</div>
+    <div class="fg"><label>Potential risks (especially if off-site or with external organisations)</label>
+      <textarea id="pRisk" style="min-height:70px" placeholder="Identify risks and how you plan to manage them...">${esc(proposal.risk||'')}</textarea>
+    </div>
+
+    <div class="msec">Potential challenges</div>
+    <div class="fg"><label>What challenges do you anticipate, and how do you plan to overcome them?</label>
+      <textarea id="pChallenges" style="min-height:70px" placeholder="List anticipated challenges and your mitigation strategies...">${esc(proposal.challenges||'')}</textarea>
+    </div>
+
+    <div class="msec">Reflection plan</div>
+    <div class="fg"><label>How will you reflect on your progress throughout the project?</label>
+      <textarea id="pReflection" style="min-height:70px" placeholder="e.g. Weekly journal entries, photos, group discussions...">${esc(proposal.reflectionPlan||'')}</textarea>
+    </div>
+
+    <div class="msec">Demonstration</div>
+    <div class="fg"><label>How do you plan to share this project? (Blog, student presentation, video, workshop, huddle)</label>
+      <input type="text" id="pDemo" value="${esc(proposal.demo||'')}" placeholder="e.g. Video presentation at the Christmas Fair">
+    </div>
+
+    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--r);padding:12px 14px;margin-top:4px;font-size:13px;color:#92400e">
+      <strong>Approval required:</strong> Once complete, find a supervising teacher and present your proposal. Approval must be granted by the Supervising Teacher, CAS Coordinator, and DP Coordinator before final approval is given.
+    </div>
+
+    <div class="mfoot">
+      <button class="btn" onclick="setModal(null)">Cancel</button>
+      <button class="btn btn-p" onclick="saveProposal('${sid}','${expId||''}')">Save proposal</button>
+    </div>
+  </div>`);
+}
+
+function saveProposal(sid, expId){
+  const proposal={
+    names:       document.getElementById('pNames')?.value.trim()||'',
+    title:       document.getElementById('pTitle')?.value.trim()||'',
+    desc:        document.getElementById('pDesc')?.value.trim()||'',
+    strandC:     document.getElementById('pC')?.checked||false,
+    strandA:     document.getElementById('pA')?.checked||false,
+    strandS:     document.getElementById('pS')?.checked||false,
+    rationale:   document.getElementById('pRationale')?.value.trim()||'',
+    goals:       document.getElementById('pGoals')?.value.trim()||'',
+    plan:        document.getElementById('pPlan')?.value.trim()||'',
+    risk:        document.getElementById('pRisk')?.value.trim()||'',
+    challenges:  document.getElementById('pChallenges')?.value.trim()||'',
+    reflectionPlan:document.getElementById('pReflection')?.value.trim()||'',
+    demo:        document.getElementById('pDemo')?.value.trim()||'',
+    savedAt:     new Date().toISOString(),
+  };
+
+  if(expId){
+    const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+    if(exp){
+      exp.proposal=proposal;
+      // Sync name from proposal title if not set
+      if(proposal.title&&!exp.name)exp.name=proposal.title;
+    }
+  }
+  saveAll();
+  setModal(null);
+  showToast('Proposal saved.','ok');
+  // Re-render wherever we are
+  if(APP.role==='student')renderStudentHome();
+  else render();
+  if(configured()&&expId){
+    const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+    if(exp)apiCall('saveExperience',{exp}).catch(()=>{});
+  }
+}
+
+// ══════════════════════════════════════════════════
 //  GEMINI AI ASSISTANT
 // ══════════════════════════════════════════════════
 const GEM_SYSTEM_PROMPT=`You are a helpful assistant for IB CAS (Creativity, Activity, Service) students following the 2017 syllabus. You help students understand and engage with CAS requirements.
@@ -2309,7 +2492,7 @@ async function sendGemMessage(){
 
   try{
     const res=await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
         method:'POST',
         headers:{'Content-Type':'application/json'},
