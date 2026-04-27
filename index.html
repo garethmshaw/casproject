@@ -280,6 +280,9 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 /* Grey dashed = empty, clickable to add */
 .exp-slot.slot-empty{background:var(--surf2);border-color:var(--bdr2);border-style:dashed;color:var(--tx3)}
 .exp-slot.slot-empty:hover{background:#fdf0e8;border-color:var(--acc);color:var(--acc)}
+/* Locked = proposal not yet approved */
+.exp-slot.slot-locked{background:var(--surf2);border-color:var(--bdr);border-style:dashed;color:var(--bdr2);cursor:not-allowed;opacity:.55}
+.exp-slot.slot-locked:hover{transform:none;box-shadow:none}
 .exp-slot .slot-num{font-size:15px;font-weight:700;line-height:1}
 .exp-slot .slot-label{font-size:8px;margin-top:2px;text-align:center;line-height:1.2;max-width:50px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .exp-slot .slot-icon{font-size:13px;line-height:1}
@@ -580,6 +583,7 @@ let APP={
   gemOpen:false,
   gemHistory:[],            // Gemini conversation history
   reviewRecordings:{},      // studentId → [{url, label, addedAt}]
+  proposalRecords:{},       // key: sid_type_proposal → {status, title, desc, names, ...teacherFeedback, savedAt}
   _defaultExpType:null,
   _openExpId:null,
   // Data
@@ -600,7 +604,8 @@ function saveAll(){
     students:APP.students,classes:APP.classes,
     experiences:APP.experiences,logoUrl:APP.logoUrl,
     myStudentId:APP.myStudentId,
-    reviewRecordings:APP.reviewRecordings
+    reviewRecordings:APP.reviewRecordings,
+    proposalRecords:APP.proposalRecords
   });
 }
 function loadAll(){
@@ -612,6 +617,7 @@ function loadAll(){
     APP.logoUrl=d.logoUrl||null;
     APP.myStudentId=d.myStudentId||APP.myStudentId;
     APP.reviewRecordings=d.reviewRecordings||{};
+    APP.proposalRecords=d.proposalRecords||{};
   }
 }
 
@@ -1124,6 +1130,18 @@ function renderExpTab(sid,list){
   const type=APP.studentExpType||'single';
   const typeList=list.filter(e=>e.type===type);
   const slots=EXP_SLOTS[type];
+  const typeInfo=ET[type];
+  const needsProposal=typeInfo?.hasProposal;
+
+  // For proposal types, find the standalone proposal record (or derive from first exp)
+  // We store proposal state on a special proposal-only record with id = sid+'_'+type+'_proposal'
+  const proposalKey=`${sid}_${type}_proposal`;
+  const proposalRecord=APP.proposalRecords?.[proposalKey]||null;
+  const proposalStatus=proposalRecord?.status||'none'; // 'none'|'draft'|'pending'|'approved'
+  const proposalApproved=proposalStatus==='approved';
+  // Teacher feedback on proposal
+  const proposalFeedback=proposalRecord?.teacherFeedback||'';
+
   return`<div>
     <div class="sub-tabs">
       ${Object.keys(EXP_SLOTS).map(t=>{
@@ -1134,25 +1152,95 @@ function renderExpTab(sid,list){
     </div>
 
     <div style="margin-bottom:16px">
-      <div style="font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:2px">${ET[type].label}</div>
-      <div style="font-size:13px;color:var(--tx3)">Tap a slot to open it · Grey slots are available to fill</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:17px;margin-bottom:2px">${typeInfo.label}</div>
+      <div style="font-size:13px;color:var(--tx3)">
+        ${needsProposal?'Complete and submit your proposal first · Experience slot unlocks once proposal is approved':'Tap a slot to open it · Grey slots are available to fill'}
+      </div>
     </div>
+
+    ${needsProposal?`
+    <!-- Proposal section — must be approved before slot unlocks -->
+    <div style="margin-bottom:20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:600;color:var(--tx2)">Step 1 — ${typeInfo.label} Proposal</div>
+        ${proposalStatus==='approved'
+          ?`<span style="background:#16a34a;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px">✓ Proposal approved</span>`
+          :proposalStatus==='pending'
+          ?`<span style="background:#f59e0b;color:#fff;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px">⏳ Awaiting approval</span>`
+          :`<button class="btn btn-sm" style="background:#9d174d;color:#fff;border-color:#9d174d;font-size:13px" onclick="openProposalFormStandalone('${sid}','${type}')">📋 Proposal Form</button>`
+        }
+      </div>
+
+      ${proposalStatus==='none'?`
+        <div style="background:var(--surf2);border:1px dashed var(--bdr2);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--tx3)">
+          You must complete and submit a proposal form, and have it approved by your teacher, before you can log this experience.
+          <div style="margin-top:8px"><button class="btn btn-sm" style="background:#9d174d;color:#fff;border-color:#9d174d" onclick="openProposalFormStandalone('${sid}','${type}')">📋 Open Proposal Form</button></div>
+        </div>
+      `:''}
+
+      ${proposalStatus==='draft'?`
+        <div style="background:#fce7f3;border:1px solid #f9a8d4;border-radius:10px;padding:12px 15px">
+          <div style="font-size:14px;font-weight:600;color:#9d174d;margin-bottom:4px">${esc(proposalRecord.title||'Draft proposal')}</div>
+          ${proposalRecord.desc?`<div style="font-size:13px;color:var(--tx2);line-height:1.5;margin-bottom:8px">${esc(proposalRecord.desc.length>160?proposalRecord.desc.slice(0,160)+'…':proposalRecord.desc)}</div>`:''}
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <button class="btn btn-xs" style="background:#9d174d;color:#fff;border-color:#9d174d" onclick="openProposalFormStandalone('${sid}','${type}')">✎ Edit proposal</button>
+            <button class="btn btn-xs" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitProposalForApproval('${sid}','${type}')">Submit for approval →</button>
+          </div>
+        </div>
+      `:''}
+
+      ${proposalStatus==='pending'?`
+        <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:10px;padding:12px 15px">
+          <div style="font-size:14px;font-weight:600;color:#92400e;margin-bottom:4px">${esc(proposalRecord.title||'Proposal submitted')}</div>
+          <div style="font-size:13px;color:#92400e">⏳ Your proposal has been submitted and is awaiting teacher approval. The experience slot will unlock once approved.</div>
+          <div style="margin-top:8px"><button class="btn btn-xs" style="background:#9d174d;color:#fff;border-color:#9d174d" onclick="openProposalFormStandalone('${sid}','${type}')">View proposal</button></div>
+        </div>
+      `:''}
+
+      ${proposalStatus==='feedback'?`
+        <div style="background:#eff6ff;border:2px solid #1a4f8a;border-radius:10px;padding:12px 15px">
+          <div style="font-size:13px;font-weight:700;color:#1a4f8a;margin-bottom:5px">✉ Teacher feedback on your proposal</div>
+          <div style="font-size:13px;color:var(--tx);margin-bottom:8px">${esc(proposalFeedback)}</div>
+          <div style="display:flex;gap:7px">
+            <button class="btn btn-xs" style="background:#9d174d;color:#fff;border-color:#9d174d" onclick="openProposalFormStandalone('${sid}','${type}')">✎ Edit &amp; update</button>
+            <button class="btn btn-xs" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitProposalForApproval('${sid}','${type}')">Resubmit →</button>
+          </div>
+        </div>
+      `:''}
+
+      ${proposalStatus==='approved'?`
+        <div style="background:#f0faf2;border:1px solid #6ee7b7;border-radius:10px;padding:12px 15px">
+          <div style="font-size:14px;font-weight:600;color:#16a34a;margin-bottom:3px">✓ ${esc(proposalRecord.title||'Proposal approved')}</div>
+          ${proposalRecord.desc?`<div style="font-size:13px;color:var(--tx2);line-height:1.5;margin-bottom:5px">${esc(proposalRecord.desc.length>160?proposalRecord.desc.slice(0,160)+'…':proposalRecord.desc)}</div>`:''}
+          ${proposalRecord.names?`<div style="font-size:12px;color:var(--tx3)">Participants: ${esc(proposalRecord.names)}</div>`:''}
+          <div style="margin-top:7px"><button class="btn btn-xs btn-ghost" onclick="openProposalFormStandalone('${sid}','${type}')">View full proposal</button></div>
+        </div>
+      `:''}
+    </div>
+
+    <div style="margin-bottom:10px;font-size:14px;font-weight:600;color:var(--tx2)">Step 2 — Log the experience</div>
+    `:''}
 
     <div class="exp-slot-grid" style="margin-bottom:14px">
       ${Array.from({length:slots},(_,i)=>{
         const exp=typeList[i];
         if(exp){
           const st=expStatus(exp);
-          // Colour map: red=draft(working on), orange=pending(awaiting approval), blue=feedback, green=met
           const cls=st==='met'?'slot-met':st==='pending'?'slot-pending':st==='feedback'?'slot-feedback':'slot-draft';
-          const icon=st==='met'?'✓':st==='pending'?'⏳':st==='feedback'?'✉':st==='draft'?'✎':'';
+          const icon=st==='met'?'✓':st==='pending'?'⏳':st==='feedback'?'✉':'✎';
           return`<div class="exp-slot ${cls}" onclick="openExpDetail('${sid}','${exp.id}')" title="${esc(exp.name)}">
             <span class="slot-num">${i+1}</span>
             <span class="slot-icon">${icon}</span>
             <span class="slot-label">${esc(exp.name.length>9?exp.name.slice(0,8)+'…':exp.name)}</span>
           </div>`;
         }
-        // Empty slot — clickable, opens add experience form pre-set to this type
+        // Empty slot — locked if proposal not yet approved (for proposal types)
+        if(needsProposal&&!proposalApproved){
+          return`<div class="exp-slot slot-locked" title="Complete and submit your proposal first — slot unlocks once approved">
+            <span class="slot-num">${i+1}</span>
+            <span style="font-size:18px">🔒</span>
+          </div>`;
+        }
         return`<div class="exp-slot slot-empty" onclick="openAddExpType('${sid}','${type}')" title="Add experience ${i+1}">
           <span class="slot-num">${i+1}</span>
           <span class="slot-icon" style="font-size:16px">+</span>
@@ -1162,18 +1250,10 @@ function renderExpTab(sid,list){
 
     <!-- Colour legend -->
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
-        <div style="width:14px;height:14px;border-radius:3px;background:#dc2626"></div>Working on
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
-        <div style="width:14px;height:14px;border-radius:3px;background:#f59e0b"></div>Sent for approval
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
-        <div style="width:14px;height:14px;border-radius:3px;background:#1a4f8a"></div>Feedback received
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)">
-        <div style="width:14px;height:14px;border-radius:3px;background:#16a34a"></div>Approved
-      </div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)"><div style="width:14px;height:14px;border-radius:3px;background:#dc2626"></div>Working on</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)"><div style="width:14px;height:14px;border-radius:3px;background:#f59e0b"></div>Sent for approval</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)"><div style="width:14px;height:14px;border-radius:3px;background:#1a4f8a"></div>Feedback received</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3)"><div style="width:14px;height:14px;border-radius:3px;background:#16a34a"></div>Approved</div>
     </div>
 
     <div id="expDetailArea"></div>
@@ -1183,24 +1263,7 @@ function renderExpTab(sid,list){
 function openAddExpType(sid, type){
   _editSid=sid; _editEid=null; _focusLoId=null;
   APP._defaultExpType=type;
-  // For project and charity, show proposal form first
-  if(ET[type]?.hasProposal){
-    // Create a placeholder experience first so proposal has an ID to attach to
-    const exp={
-      id:uid(), studentId:sid, type, year:'Y12',
-      creativity:false, activity:false, service:false,
-      name:'', what:'', when:'', where:'', who:'',
-      recordingUrl:'', files:[], status:'draft',
-      submittedAt:'', teacherFeedback:'', proposal:{},
-      los:{}, savedAt:new Date().toISOString(),
-    };
-    if(!APP.experiences[sid])APP.experiences[sid]=[];
-    APP.experiences[sid].push(exp);
-    saveAll();
-    openProposalForm(sid, exp.id);
-  } else {
-    buildExpModal();
-  }
+  buildExpModal();
 }
 
 function openExpDetail(sid,expId){
@@ -1251,7 +1314,6 @@ function openExpDetail(sid,expId){
             <button class="btn btn-sm" onclick="openEditExp('${exp.id}')">✎ Continue editing</button>
             <button class="btn btn-sm" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitForApproval('${sid}','${exp.id}')">Send for approval →</button>
           `:''}
-          ${ET[exp.type]?.hasProposal?`<button class="btn btn-sm" style="background:#9d174d;color:#fff;border-color:#9d174d" onclick="openProposalForm('${sid}','${exp.id}')">📋 ${exp.proposal&&exp.proposal.title?'View proposal':'Complete proposal'}</button>`:''}
           ${status==='feedback'?`
             <button class="btn btn-sm" onclick="openEditExp('${exp.id}')">✎ Edit &amp; update</button>
             <button class="btn btn-sm" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitForApproval('${sid}','${exp.id}')">Resubmit →</button>
@@ -1264,17 +1326,21 @@ function openExpDetail(sid,expId){
       <div style="font-size:13px;color:var(--tx3);margin-bottom:12px">${[exp.when,exp.where,exp.who].filter(Boolean).map(esc).join(' · ')}</div>
       ${exp.recordingUrl?`<div style="margin-bottom:12px"><a href="${esc(exp.recordingUrl)}" target="_blank" rel="noopener" class="rec-link"><span style="font-size:16px">▶</span><span class="rec-badge">REC</span>View recording</a></div>`:''}
 
-      <!-- Proposal summary for project/charity types -->
-      ${ET[exp.type]?.hasProposal?`<div style="background:#fce7f3;border:1px solid #f9a8d4;border-radius:10px;padding:13px 16px;margin-bottom:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9d174d;margin-bottom:4px">📋 ${ET[exp.type].label} Proposal</div>
-          <button class="btn btn-xs" style="background:#9d174d;color:#fff;border-color:#9d174d;font-size:11px" onclick="openProposalForm('${sid}','${exp.id}')">${exp.proposal&&exp.proposal.title?'Edit proposal':'Complete proposal →'}</button>
+      <!-- Proposal Form section for project/charity types -->
+      ${ET[exp.type]?.hasProposal?`<div style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:600;color:var(--tx2)">📋 ${ET[exp.type].label} Proposal</div>
+          <button class="btn btn-sm" style="background:#9d174d;color:#fff;border-color:#9d174d;font-size:13px;padding:7px 16px" onclick="openProposalForm('${sid}','${exp.id}')">
+            📋 Proposal Form
+          </button>
         </div>
-        ${exp.proposal&&exp.proposal.title?`
+        ${exp.proposal&&exp.proposal.title?`<div style="background:#fce7f3;border:1px solid #f9a8d4;border-radius:10px;padding:12px 15px">
           <div style="font-size:14px;font-weight:600;color:var(--tx);margin-bottom:4px">${esc(exp.proposal.title)}</div>
-          ${exp.proposal.desc?`<div style="font-size:13px;color:var(--tx2);line-height:1.5">${esc(exp.proposal.desc.length>180?exp.proposal.desc.slice(0,180)+'…':exp.proposal.desc)}</div>`:''}
-          ${exp.proposal.names?`<div style="font-size:12px;color:var(--tx3);margin-top:5px">Participants: ${esc(exp.proposal.names)}</div>`:''}
-        `:`<div style="font-size:13px;color:#9d174d;font-style:italic">Proposal not yet completed — click "Complete proposal" to fill in the form.</div>`}
+          ${exp.proposal.desc?`<div style="font-size:13px;color:var(--tx2);line-height:1.5;margin-bottom:5px">${esc(exp.proposal.desc.length>200?exp.proposal.desc.slice(0,200)+'…':exp.proposal.desc)}</div>`:''}
+          ${exp.proposal.names?`<div style="font-size:12px;color:var(--tx3)">Participants: ${esc(exp.proposal.names)}</div>`:''}
+        </div>`:`<div style="background:var(--surf2);border:1px dashed var(--bdr2);border-radius:10px;padding:12px 15px;font-size:13px;color:var(--tx3);font-style:italic">
+          No proposal submitted yet. Click "📋 Proposal Form" above to complete and submit your proposal.
+        </div>`}
       </div>`:''}
 
       ${exp.what?`<div style="font-size:14px;color:var(--tx2);margin-bottom:16px;line-height:1.6;padding:12px;background:var(--surf2);border-radius:8px">${esc(exp.what)}</div>`:''}
@@ -1622,7 +1688,9 @@ function renderTeacherView(){
 }
 
 function renderTeacherHome(){
-  const pending=allPendingSubmissions();
+  const pendingExps=allPendingSubmissions();
+  const pendingProps=getAllPendingProposals();
+  const totalPending=pendingExps.length+pendingProps.length;
   document.getElementById('root').innerHTML=`
   <div class="main">
     <div class="ptitle">
@@ -1633,7 +1701,7 @@ function renderTeacherHome(){
       <button class="tab ${APP.teacherTab==='classes'?'on':''}" onclick="APP.teacherTab='classes';render()">Classes &amp; Students</button>
       <button class="tab ${APP.teacherTab==='overview'?'on':''}" onclick="APP.teacherTab='overview';render()">Full Overview</button>
       <button class="tab ${APP.teacherTab==='approvals'?'on':''}" onclick="APP.teacherTab='approvals';render()">
-        Approvals ${pending.length?`<span class="teacher-pending-badge">${pending.length}</span>`:''}
+        Approvals ${totalPending?`<span class="teacher-pending-badge">${totalPending}</span>`:''}
       </button>
     </div>
     ${APP.teacherTab==='classes'?renderClassList():APP.teacherTab==='overview'?renderOverviewTable():renderApprovalsPanel()}
@@ -1641,32 +1709,84 @@ function renderTeacherHome(){
 }
 
 function renderApprovalsPanel(){
-  const pending=allPendingSubmissions();
-  if(!pending.length)return`<div class="empty"><div class="empty-icon">✅</div><div class="empty-title">No pending submissions</div><div>Students will appear here when they submit experiences for approval.</div></div>`;
-  return`<div style="display:flex;flex-direction:column;gap:12px">
-    ${pending.map(({student,exp})=>{
-      const losCovered=Object.entries(exp.los||{}).filter(([,d])=>d.met).map(([k])=>{const lo=LOs.find(l=>l.id===k);return lo?lo.label:k}).join(', ');
-      return`<div class="approval-card pending-card">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
-          <div style="flex:1">
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
-              <span style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:600">${esc(exp.name)}</span>
-              <span class="teacher-pending-badge">Pending review</span>
-              <span class="badge ${ET[exp.type]?.bc||''}">${ET[exp.type]?.label||exp.type}</span>
+  const pendingExps=allPendingSubmissions();
+  const pendingProps=getAllPendingProposals();
+  const totalPending=pendingExps.length+pendingProps.length;
+
+  if(!totalPending)return`<div class="empty">
+    <div class="empty-icon">✅</div>
+    <div class="empty-title">No pending submissions</div>
+    <div>Proposal forms and experience submissions from students will appear here for your review.</div>
+  </div>`;
+
+  return`<div style="display:flex;flex-direction:column;gap:16px">
+
+    ${pendingProps.length?`
+    <!-- ── PENDING PROPOSALS ── -->
+    <div>
+      <div style="font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+        📋 Proposal approvals
+        <span class="teacher-pending-badge">${pendingProps.length}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${pendingProps.map(({key,rec,student})=>`
+        <div class="approval-card pending-card" style="border-left-color:#9d174d">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                <span style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:600">${esc(rec.title||'Untitled proposal')}</span>
+                <span style="background:#9d174d;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px">📋 Proposal</span>
+                <span class="badge ${ET[rec.type]?.bc||''}">${ET[rec.type]?.label||rec.type}</span>
+              </div>
+              <div style="font-size:13px;color:var(--tx2);margin-bottom:4px"><strong>Student:</strong> ${esc(student?.name||'Unknown')} · ${esc(student?.year||'')}</div>
+              ${rec.names?`<div style="font-size:13px;color:var(--tx3);margin-bottom:4px"><strong>Participants:</strong> ${esc(rec.names)}</div>`:''}
+              ${rec.desc?`<div style="font-size:13px;color:var(--tx2);margin-bottom:4px;line-height:1.5">${esc(rec.desc.length>200?rec.desc.slice(0,200)+'…':rec.desc)}</div>`:''}
+              ${rec.goals?`<div style="font-size:13px;color:var(--tx3);margin-bottom:4px"><strong>Goals:</strong> ${esc(rec.goals.length>120?rec.goals.slice(0,120)+'…':rec.goals)}</div>`:''}
+              <div style="font-size:12px;color:var(--tx3);margin-top:5px">Submitted: ${rec.submittedAt?new Date(rec.submittedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):''}</div>
             </div>
-            <div style="font-size:13px;color:var(--tx2);margin-bottom:4px"><strong>Student:</strong> ${esc(student.name)} · ${student.year}</div>
-            <div style="font-size:13px;color:var(--tx3)">${[exp.when,exp.where].filter(Boolean).map(esc).join(' · ')}</div>
-            ${exp.what?`<div style="font-size:13px;color:var(--tx2);margin-top:6px">${esc(exp.what)}</div>`:''}
-            ${losCovered?`<div style="font-size:13px;margin-top:6px"><strong>LOs claimed met:</strong> ${esc(losCovered)}</div>`:''}
-            <div style="font-size:12px;color:var(--tx3);margin-top:5px">Submitted: ${exp.submittedAt?new Date(exp.submittedAt).toLocaleDateString('en-GB'):''}</div>
+            <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column">
+              <button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="teacherApproveProposal('${esc(key)}')">✓ Approve proposal</button>
+              <button class="btn btn-sm" onclick="openTeacherProposalFeedback('${esc(key)}')">↩ Return with feedback</button>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column">
-            <button class="btn btn-sm" style="background:#16a34a;color:#000;border-color:#16a34a" onclick="teacherMarkMet('${student.id}','${exp.id}')">✓ Mark as Met</button>
-            <button class="btn btn-sm" onclick="openTeacherFeedback('${student.id}','${exp.id}')">↩ Return with Feedback</button>
-          </div>
-        </div>
-      </div>`
-    }).join('')}
+        </div>`).join('')}
+      </div>
+    </div>`:''}
+
+    ${pendingExps.length?`
+    <!-- ── PENDING EXPERIENCES ── -->
+    <div>
+      <div style="font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
+        Experience approvals
+        <span class="teacher-pending-badge">${pendingExps.length}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${pendingExps.map(({student,exp})=>{
+          const losCovered=Object.entries(exp.los||{}).filter(([,d])=>d.met).map(([k])=>{const lo=LOs.find(l=>l.id===k);return lo?lo.label:k}).join(', ');
+          return`<div class="approval-card pending-card">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+              <div style="flex:1">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+                  <span style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:600">${esc(exp.name)}</span>
+                  <span class="teacher-pending-badge">Pending review</span>
+                  <span class="badge ${ET[exp.type]?.bc||''}">${ET[exp.type]?.label||exp.type}</span>
+                </div>
+                <div style="font-size:13px;color:var(--tx2);margin-bottom:4px"><strong>Student:</strong> ${esc(student.name)} · ${student.year}</div>
+                <div style="font-size:13px;color:var(--tx3)">${[exp.when,exp.where].filter(Boolean).map(esc).join(' · ')}</div>
+                ${exp.what?`<div style="font-size:13px;color:var(--tx2);margin-top:5px">${esc(exp.what.length>150?exp.what.slice(0,150)+'…':exp.what)}</div>`:''}
+                ${losCovered?`<div style="font-size:13px;margin-top:5px"><strong>LOs claimed met:</strong> ${esc(losCovered)}</div>`:''}
+                <div style="font-size:12px;color:var(--tx3);margin-top:5px">Submitted: ${exp.submittedAt?new Date(exp.submittedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):''}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column">
+                <button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="teacherMarkMet('${student.id}','${exp.id}')">✓ Mark as Met</button>
+                <button class="btn btn-sm" onclick="openTeacherFeedback('${student.id}','${exp.id}')">↩ Return with Feedback</button>
+              </div>
+            </div>
+          </div>`
+        }).join('')}
+      </div>
+    </div>`:''}
+
   </div>`;
 }
 
@@ -2300,12 +2420,17 @@ ${html}
 // ══════════════════════════════════════════════════
 //  PROPOSAL FORM (CAS Project & Charity Fundraiser)
 // ══════════════════════════════════════════════════
-function openProposalForm(sid, expId){
-  const exp=expId?(APP.experiences[sid]||[]).find(e=>e.id===expId):null;
-  const type=exp?exp.type:(APP._defaultExpType||'project');
+
+// ── Standalone proposal (pre-experience, gating the slot) ──────────
+function proposalKey(sid, type){ return `${sid}_${type}_proposal`; }
+
+function openProposalFormStandalone(sid, type){
+  const key=proposalKey(sid,type);
+  const rec=APP.proposalRecords[key]||{};
   const isCharity=type==='charity';
   const title=isCharity?'Charity Fundraiser Proposal Form':'CAS Project Proposal Form';
-  const proposal=exp?.proposal||{};
+  const status=rec.status||'none';
+  const locked=status==='pending'||status==='approved';
 
   setModal(`<div class="modal" style="max-width:700px">
     <div class="modal-h">
@@ -2316,72 +2441,190 @@ function openProposalForm(sid, expId){
       <button class="mclose" onclick="setModal(null)">×</button>
     </div>
 
-    <div style="background:var(--surf2);border-radius:var(--r);padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--tx2)">
-      <strong>Minimum 3, maximum 5 participants.</strong> Note — this does not have to be just IB students. When complete, find a supervising teacher, present your project to them, and return the signed form to the CAS Coordinator for final approval.
+    ${status==='approved'?`<div style="background:#f0faf2;border:1px solid #6ee7b7;border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:#16a34a;font-weight:600">✓ This proposal has been approved by your teacher. The experience slot is now unlocked.</div>`:''}
+    ${status==='pending'?`<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:#92400e;font-weight:600">⏳ Submitted for approval. You can view but not edit until your teacher responds.</div>`:''}
+    ${status==='feedback'&&rec.teacherFeedback?`<div style="background:#eff6ff;border:2px solid #1a4f8a;border-radius:var(--r);padding:12px 14px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#1a4f8a;margin-bottom:5px">✉ Teacher feedback — please revise and resubmit</div>
+      <div style="font-size:13px;color:var(--tx);line-height:1.6">${esc(rec.teacherFeedback)}</div>
+    </div>`:''}
+
+    <div style="background:var(--surf2);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;font-size:13px;color:var(--tx2)">
+      <strong>Minimum 3, maximum 5 participants.</strong> When complete, submit for approval — your teacher will review and either approve or return with feedback.
     </div>
 
     <div class="msec">Project details</div>
-    <div class="fg"><label>Student name(s) — minimum 3, maximum 5</label>
-      <textarea id="pNames" style="min-height:60px" placeholder="List all student names involved">${esc(proposal.names||'')}</textarea>
+    <div class="fg"><label>Student name(s)</label>
+      <textarea id="pNames" style="min-height:55px" placeholder="List all participants (min 3, max 5)" ${locked?'readonly':''}>${esc(rec.names||'')}</textarea>
     </div>
-    <div class="fg"><label>Proposed ${isCharity?'Charity Fundraiser':'CAS Project'} title</label>
-      <input type="text" id="pTitle" value="${esc(proposal.title||exp?.name||'')}" placeholder="e.g. School Garden Restoration Project">
+    <div class="fg"><label>Proposed title</label>
+      <input type="text" id="pTitle" value="${esc(rec.title||'')}" placeholder="${isCharity?'e.g. Bake Sale for Habitat for Humanity':'e.g. School Garden Restoration'}" ${locked?'readonly':''}>
     </div>
-    <div class="fg"><label>Project description — what do you plan to do, and what is the purpose?</label>
-      <textarea id="pDesc" style="min-height:90px" placeholder="Provide a brief overview of the project...">${esc(proposal.desc||exp?.what||'')}</textarea>
+    <div class="fg"><label>Description — what do you plan to do?</label>
+      <textarea id="pDesc" style="min-height:85px" placeholder="Provide a brief overview..." ${locked?'readonly':''}>${esc(rec.desc||'')}</textarea>
     </div>
-    <div class="fg"><label>CAS strands (tick all that apply)</label>
+    <div class="fg"><label>CAS strands</label>
       <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:4px">
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pC" ${proposal.strandC?'checked':''}> Creativity</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pA" ${proposal.strandA?'checked':''}> Activity</label>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pS" ${proposal.strandS?'checked':''}> Service</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pC" ${rec.strandC?'checked':''} ${locked?'disabled':''}> Creativity</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pA" ${rec.strandA?'checked':''} ${locked?'disabled':''}> Activity</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="pS" ${rec.strandS?'checked':''} ${locked?'disabled':''}> Service</label>
       </div>
     </div>
 
-    <div class="msec">Investigation &amp; rationale</div>
-    <div class="fg"><label>What inspired this project? Identify personal interests or community needs.</label>
-      <textarea id="pRationale" style="min-height:80px" placeholder="What inspired you to take on this project? How will it benefit others and help you grow?">${esc(proposal.rationale||'')}</textarea>
+    <div class="msec">Rationale</div>
+    <div class="fg"><label>What inspired this? Identify personal interests or community needs.</label>
+      <textarea id="pRationale" style="min-height:75px" placeholder="Why this project? How will it benefit others?" ${locked?'readonly':''}>${esc(rec.rationale||'')}</textarea>
     </div>
 
     <div class="msec">Goals &amp; success criteria</div>
     <div class="fg"><label>What do you hope to achieve? How will you measure success?</label>
-      <textarea id="pGoals" style="min-height:80px" placeholder="List your goals and how you will know you have achieved them...">${esc(proposal.goals||'')}</textarea>
+      <textarea id="pGoals" style="min-height:75px" placeholder="List goals and how you will know they are achieved..." ${locked?'readonly':''}>${esc(rec.goals||'')}</textarea>
     </div>
 
     <div class="msec">Action plan</div>
-    <div class="fg"><label>Timeline, key milestones, resources needed, and collaborators</label>
-      <textarea id="pPlan" style="min-height:100px" placeholder="Week 1: ... | Week 2–4: ... | Resources: ... | Collaborators: ...">${esc(proposal.plan||'')}</textarea>
+    <div class="fg"><label>Timeline, milestones, resources and collaborators</label>
+      <textarea id="pPlan" style="min-height:90px" placeholder="Week 1: ... | Weeks 2–4: ... | Resources: ..." ${locked?'readonly':''}>${esc(rec.plan||'')}</textarea>
     </div>
 
-    <div class="msec">Risk assessment</div>
-    <div class="fg"><label>Potential risks (especially if off-site or with external organisations)</label>
-      <textarea id="pRisk" style="min-height:70px" placeholder="Identify risks and how you plan to manage them...">${esc(proposal.risk||'')}</textarea>
+    <div class="msec">Risk &amp; challenges</div>
+    <div class="fr">
+      <div class="fg"><label>Potential risks</label>
+        <textarea id="pRisk" style="min-height:65px" placeholder="Identify risks and mitigations..." ${locked?'readonly':''}>${esc(rec.risk||'')}</textarea>
+      </div>
+      <div class="fg"><label>Anticipated challenges</label>
+        <textarea id="pChallenges" style="min-height:65px" placeholder="Challenges and how you'll overcome them..." ${locked?'readonly':''}>${esc(rec.challenges||'')}</textarea>
+      </div>
     </div>
 
-    <div class="msec">Potential challenges</div>
-    <div class="fg"><label>What challenges do you anticipate, and how do you plan to overcome them?</label>
-      <textarea id="pChallenges" style="min-height:70px" placeholder="List anticipated challenges and your mitigation strategies...">${esc(proposal.challenges||'')}</textarea>
+    <div class="msec">Reflection &amp; demonstration</div>
+    <div class="fr">
+      <div class="fg"><label>How will you reflect throughout?</label>
+        <input type="text" id="pReflection" value="${esc(rec.reflectionPlan||'')}" placeholder="e.g. Weekly journal, photos..." ${locked?'readonly':''}>
+      </div>
+      <div class="fg"><label>How will you share/demonstrate?</label>
+        <input type="text" id="pDemo" value="${esc(rec.demo||'')}" placeholder="e.g. Blog, presentation, video..." ${locked?'readonly':''}>
+      </div>
     </div>
 
-    <div class="msec">Reflection plan</div>
-    <div class="fg"><label>How will you reflect on your progress throughout the project?</label>
-      <textarea id="pReflection" style="min-height:70px" placeholder="e.g. Weekly journal entries, photos, group discussions...">${esc(proposal.reflectionPlan||'')}</textarea>
-    </div>
-
-    <div class="msec">Demonstration</div>
-    <div class="fg"><label>How do you plan to share this project? (Blog, student presentation, video, workshop, huddle)</label>
-      <input type="text" id="pDemo" value="${esc(proposal.demo||'')}" placeholder="e.g. Video presentation at the Christmas Fair">
-    </div>
-
-    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--r);padding:12px 14px;margin-top:4px;font-size:13px;color:#92400e">
-      <strong>Approval required:</strong> Once complete, find a supervising teacher and present your proposal. Approval must be granted by the Supervising Teacher, CAS Coordinator, and DP Coordinator before final approval is given.
+    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:var(--r);padding:10px 14px;font-size:13px;color:#92400e;margin-top:4px">
+      <strong>Approval required:</strong> Supervising Teacher → CAS Coordinator → DP Coordinator.
     </div>
 
     <div class="mfoot">
-      <button class="btn" onclick="setModal(null)">Cancel</button>
-      <button class="btn btn-p" onclick="saveProposal('${sid}','${expId||''}')">Save proposal</button>
+      <button class="btn" onclick="setModal(null)">${locked?'Close':'Cancel'}</button>
+      ${!locked?`<button class="btn" onclick="saveProposalStandalone('${sid}','${type}',false)">Save draft</button>
+      <button class="btn btn-p" style="background:#f59e0b;border-color:#d97706" onclick="saveProposalStandalone('${sid}','${type}',true)">Submit for approval →</button>`:''}
+      ${status==='feedback'?`<button class="btn btn-p" style="background:#f59e0b;border-color:#d97706" onclick="saveProposalStandalone('${sid}','${type}',true)">Resubmit →</button>`:''}
     </div>
   </div>`);
+}
+
+function saveProposalStandalone(sid, type, submit){
+  const key=proposalKey(sid,type);
+  const existing=APP.proposalRecords[key]||{};
+  const rec={
+    ...existing,
+    names:       document.getElementById('pNames')?.value.trim()||'',
+    title:       document.getElementById('pTitle')?.value.trim()||'',
+    desc:        document.getElementById('pDesc')?.value.trim()||'',
+    strandC:     document.getElementById('pC')?.checked||false,
+    strandA:     document.getElementById('pA')?.checked||false,
+    strandS:     document.getElementById('pS')?.checked||false,
+    rationale:   document.getElementById('pRationale')?.value.trim()||'',
+    goals:       document.getElementById('pGoals')?.value.trim()||'',
+    plan:        document.getElementById('pPlan')?.value.trim()||'',
+    risk:        document.getElementById('pRisk')?.value.trim()||'',
+    challenges:  document.getElementById('pChallenges')?.value.trim()||'',
+    reflectionPlan:document.getElementById('pReflection')?.value.trim()||'',
+    demo:        document.getElementById('pDemo')?.value.trim()||'',
+    status:      submit?'pending':'draft',
+    teacherFeedback: submit?'':existing.teacherFeedback||'',
+    submittedAt: submit?new Date().toISOString():existing.submittedAt||'',
+    savedAt:     new Date().toISOString(),
+    sid, type
+  };
+  if(!rec.title&&submit){alert('Please enter a title before submitting.');return;}
+  APP.proposalRecords[key]=rec;
+  saveAll();
+  setModal(null);
+  showToast(submit?'Proposal submitted for teacher approval.':'Proposal saved as draft.','ok');
+  renderStudentHome();
+}
+
+function submitProposalForApproval(sid, type){
+  const key=proposalKey(sid,type);
+  const rec=APP.proposalRecords[key];
+  if(!rec||!rec.title){showToast('Please complete the proposal form first.','err');return;}
+  rec.status='pending';
+  rec.submittedAt=new Date().toISOString();
+  saveAll();
+  showToast('Proposal submitted for teacher approval.','ok');
+  renderStudentHome();
+}
+
+// ── Teacher: approve or return proposal ────────────────────────────
+function getAllPendingProposals(){
+  const result=[];
+  Object.entries(APP.proposalRecords).forEach(([key,rec])=>{
+    if(rec.status==='pending'){
+      const stu=APP.students.find(s=>s.id===rec.sid);
+      result.push({key,rec,student:stu});
+    }
+  });
+  return result;
+}
+
+function teacherApproveProposal(key){
+  const rec=APP.proposalRecords[key];
+  if(!rec)return;
+  rec.status='approved';
+  rec.teacherFeedback='';
+  saveAll();
+  showToast('Proposal approved — student\'s experience slot is now unlocked.','ok');
+  render();
+}
+
+function openTeacherProposalFeedback(key){
+  const rec=APP.proposalRecords[key];
+  const stu=APP.students.find(s=>s.id===rec?.sid);
+  setModal(`<div class="modal" style="max-width:500px">
+    <div class="modal-h">
+      <div class="modal-title">Return proposal with feedback</div>
+      <button class="mclose" onclick="setModal(null)">×</button>
+    </div>
+    <div style="background:var(--surf2);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;font-size:13px">
+      <strong>${esc(rec?.title||'Proposal')}</strong><br>
+      <span style="color:var(--tx3)">${esc(stu?.name||'')} · ${esc(rec?.type||'')}</span>
+    </div>
+    <div class="fg"><label>Feedback for student</label>
+      <textarea id="propFbText" style="min-height:110px" placeholder="Explain what needs to be changed or expanded before approval...">${esc(rec?.teacherFeedback||'')}</textarea>
+    </div>
+    <div class="mfoot">
+      <button class="btn" onclick="setModal(null)">Cancel</button>
+      <button class="btn btn-p" onclick="submitTeacherProposalFeedback('${key}')">Send feedback</button>
+    </div>
+  </div>`);
+}
+
+function submitTeacherProposalFeedback(key){
+  const fb=document.getElementById('propFbText')?.value.trim();
+  if(!fb){alert('Please enter feedback before sending.');return;}
+  const rec=APP.proposalRecords[key];
+  if(!rec)return;
+  rec.status='feedback';
+  rec.teacherFeedback=fb;
+  saveAll();
+  setModal(null);
+  showToast('Feedback sent to student.','ok');
+  render();
+}
+
+// ── Proposal form (attached to an existing experience — delegates to standalone) ──
+function openProposalForm(sid, expId){
+  // For experiences attached to a proposal type, use the standalone proposal form
+  // which is keyed by student+type and gates the experience slot
+  const exp=expId?(APP.experiences[sid]||[]).find(e=>e.id===expId):null;
+  const type=exp?exp.type:(APP._defaultExpType||'project');
+  openProposalFormStandalone(sid, type);
 }
 
 function saveProposal(sid, expId){
@@ -2583,8 +2826,46 @@ function renderRecordings(sid,editable=true){
 //  BOOT
 // ══════════════════════════════════════════════════
 function boot(){
-  loadAll();renderLogo();render();
-  // Show Gem FAB if starting as student
+  loadAll();
+
+  // Seed dummy proposal records if not already set (demo only)
+  if(!APP.proposalRecords['s3_project_proposal']){
+    APP.proposalRecords['s3_project_proposal']={
+      sid:'s3',type:'project',status:'approved',
+      title:'Plastic-Free Campus Campaign',
+      names:'Sofia Reyes, Kai Tanaka, Priya Singh, Leo Mensah',
+      desc:'A school-wide initiative to eliminate single-use plastics from campus, including a waste audit, student petition, and canteen supplier negotiation.',
+      strandC:false,strandA:false,strandS:true,
+      rationale:'We noticed excessive single-use plastic in the canteen and wanted to create lasting change aligned with SDG 14.',
+      goals:'1. Conduct a campus waste audit. 2. Reduce canteen single-use plastic by 50%. 3. Assembly presentation to 200+ students.',
+      plan:'Weeks 1–2: Waste audit. Weeks 3–4: Research alternatives. Weeks 5–8: Canteen negotiations. Weeks 9–12: Presentation & monitoring.',
+      risk:'Canteen supplier may refuse. Mitigation: approach management with cost analysis.',
+      challenges:'Keeping the team motivated. Weekly check-ins and milestone celebrations.',
+      reflectionPlan:'Weekly journal entries shared on a collaborative Google Doc.',
+      demo:'Assembly presentation and short video at the Year 12 Exhibition.',
+      teacherFeedback:'',submittedAt:'2024-10-05T08:00:00.000Z',savedAt:'2024-10-05T08:00:00.000Z'
+    };
+  }
+  if(!APP.proposalRecords['s4_charity_proposal']){
+    APP.proposalRecords['s4_charity_proposal']={
+      sid:'s4',type:'charity',status:'pending',
+      title:'Charity Bake Sale for Bangkok Food Bank',
+      names:'James Okafor, Lena Kowalski, Noah Tanaka',
+      desc:'Organise and run a school bake sale to raise funds for the Bangkok Food Bank, including planning, baking, marketing and on-the-day management.',
+      strandC:true,strandA:false,strandS:true,
+      rationale:'Food insecurity is a significant issue in Bangkok. We want to make a direct, measurable impact while developing our event management skills.',
+      goals:'Raise at least 15,000 THB. Engage 50+ students as contributors or buyers. Donate 100% of proceeds.',
+      plan:'Week 1: Planning and permissions. Week 2: Marketing campaign. Week 3: Baking. Week 4: Sale event and donation.',
+      risk:'Low turnout. Mitigation: multi-channel marketing via school social media and tutor groups.',
+      challenges:'Coordinating baking schedules around exams. Use of shared sign-up sheet.',
+      reflectionPlan:'Photo diary and post-event group reflection meeting.',
+      demo:'Social media post with donation receipt and photo summary shared with school community.',
+      teacherFeedback:'',submittedAt:'2025-02-01T09:30:00.000Z',savedAt:'2025-02-01T09:30:00.000Z'
+    };
+  }
+  saveAll();
+
+  renderLogo();render();
   showGemFab(APP.role==='student');
   if(configured()){
     dot('busy','Connecting…');
