@@ -1837,55 +1837,61 @@ function submitTeacherFeedback(sid,expId){
 }
 
 function renderClassList(){
-  if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">🏫</div><div class="empty-title">No classes yet</div></div>`;
-  return APP.classes.map(cls=>{
-    const studs=APP.students.filter(s=>s.classId===cls.id);
-    return`<div style="margin-bottom:18px">
-      <div class="cls-hdr">
-        <div><div class="cls-name">${esc(cls.name)}</div><div style="font-size:13px;color:var(--tx3)">${studs.length} student${studs.length!==1?'s':''}</div></div>
-        <div style="display:flex;gap:7px">
-          <button class="btn btn-sm" onclick="APP.currentClassId='${cls.id}';render()">View class →</button>
-          <button class="btn btn-sm btn-danger" onclick="delClass('${cls.id}')">Delete</button>
+  if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">🏫</div><div class="empty-title">No classes yet</div><div>Create your first class using "+ New class"</div></div>`;
+  return`<div style="display:flex;flex-direction:column;gap:12px">
+    ${APP.classes.map(cls=>{
+      const studs=APP.students.filter(s=>s.classId===cls.id);
+      const totalExps=studs.reduce((n,s)=>n+expsFor(s.id).length,0);
+      const totalMet=studs.reduce((n,s)=>n+losMet(expsFor(s.id)).filter(Boolean).length,0);
+      const approvedCount=studs.reduce((n,s)=>n+expsFor(s.id).filter(e=>expStatus(e)==='met').length,0);
+      const pendingCount=studs.reduce((n,s)=>n+expsFor(s.id).filter(e=>expStatus(e)==='pending').length,0);
+      return`<div style="background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:var(--sh);overflow:hidden">
+        <div style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div>
+            <div class="cls-name">${esc(cls.name)}</div>
+            <div style="font-size:13px;color:var(--tx3);margin-top:3px">
+              ${studs.length} student${studs.length!==1?'s':''}
+              · ${totalExps} experience${totalExps!==1?'s':''}
+              · ${approvedCount} approved
+              ${pendingCount?`· <span style="color:#92400e;font-weight:600">${pendingCount} pending</span>`:''}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-p" onclick="APP.currentClassId='${cls.id}';render()">View class →</button>
+            <button class="btn btn-sm btn-danger" onclick="delClass('${cls.id}')">Delete</button>
+          </div>
         </div>
-      </div>
-      <div class="row-list">
-        ${studs.map(s=>{
-          const exps=expsFor(s.id);const met=losMet(exps);
-          const fileCount=exps.reduce((n,e)=>n+(e.files||[]).length,0);
-          return`<div class="r-row" onclick="APP.currentStudentId='${s.id}';APP.currentClassId='${cls.id}';APP.teacherStuTab='experiences';render()">
-            <div>
-              <div class="r-name">${esc(s.name)}</div>
-              <div class="r-meta">${s.year} · ${exps.length} exp · ${met.filter(Boolean).length}/7 LOs · ${fileCount} file${fileCount!==1?'s':''}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="lo-dots">${met.map(m=>`<div class="lo-dot ${m?'on':''}"></div>`).join('')}</div>
-              <span style="color:var(--tx3)">›</span>
-            </div>
-          </div>`
-        }).join('')}
-      </div>
-    </div>`
-  }).join('')
+      </div>`
+    }).join('')}
+  </div>`
 }
 
 function renderOverviewTable(){
   if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">No classes yet</div></div>`;
   return`<div class="card ov-wrap"><table class="ov-table"><thead><tr>
-    <th>Student</th><th>Year</th><th>Single</th><th>Short</th><th>Ext.</th><th>Proj.</th><th>Charity</th><th>Files</th>
+    <th>Student</th><th>Year</th><th>Single</th><th>Short</th><th>Ext.</th><th>Proj.</th><th>Charity</th>
+    <th style="color:#9d174d">C</th><th style="color:#92400e">A</th><th style="color:#2d6a4f">S</th>
+    <th>Files</th>
     ${LOs.map(lo=>`<th>${lo.label}</th>`).join('')}
   </tr></thead><tbody>
   ${APP.classes.map(cls=>`
-    <tr class="cls-r"><td colspan="${8+LOs.length}">${esc(cls.name)}</td></tr>
+    <tr class="cls-r"><td colspan="${11+LOs.length}">${esc(cls.name)}</td></tr>
     ${APP.students.filter(s=>s.classId===cls.id).map(s=>{
       const exps=expsFor(s.id);const met=losMet(exps);
       const fc=exps.reduce((n,e)=>n+(e.files||[]).length,0);
+      const cCount=exps.filter(e=>e.creativity).length;
+      const aCount=exps.filter(e=>e.activity).length;
+      const sCount=exps.filter(e=>e.service).length;
       return`<tr class="stu-r" onclick="APP.currentStudentId='${s.id}';APP.currentClassId='${cls.id}';APP.teacherStuTab='experiences';render()">
         <td><strong>${esc(s.name)}</strong></td><td>${s.year}</td>
-        <td>${exps.filter(e=>e.type==='single').length}</td>
-        <td>${exps.filter(e=>e.type==='short').length}</td>
-        <td>${exps.filter(e=>e.type==='extended').length}</td>
-        <td>${exps.filter(e=>e.type==='project').length}</td>
-        <td>${exps.filter(e=>e.type==='charity').length}</td>
+        <td>${exps.filter(e=>e.type==='single').length}/${EXP_SLOTS.single}</td>
+        <td>${exps.filter(e=>e.type==='short').length}/${EXP_SLOTS.short}</td>
+        <td>${exps.filter(e=>e.type==='extended').length}/${EXP_SLOTS.extended}</td>
+        <td>${exps.filter(e=>e.type==='project').length}/${EXP_SLOTS.project}</td>
+        <td>${exps.filter(e=>e.type==='charity').length}/${EXP_SLOTS.charity}</td>
+        <td style="color:#9d174d;font-weight:600">${cCount}</td>
+        <td style="color:#92400e;font-weight:600">${aCount}</td>
+        <td style="color:#2d6a4f;font-weight:600">${sCount}</td>
         <td>${fc}</td>
         ${met.map(m=>`<td class="${m?'ov-y':'ov-n'}">${m?'✓':'·'}</td>`).join('')}
       </tr>`
@@ -1907,17 +1913,32 @@ function renderTeacherClass(){
     </div>
     <div class="row-list">
       ${studs.length?studs.map(s=>{
-        const exps=expsFor(s.id);const met=losMet(exps);
-        const fc=exps.reduce((n,e)=>n+(e.files||[]).length,0);
+        const exps=expsFor(s.id);
+        const met=losMet(exps);
+        const losMet7=met.filter(Boolean).length;
+        const pending=exps.filter(e=>expStatus(e)==='pending').length;
+        const feedback=exps.filter(e=>expStatus(e)==='feedback').length;
+        const chips=Object.entries(EXP_SLOTS).map(([type,max])=>{
+          const done=exps.filter(e=>e.type===type).length;
+          const allMet=exps.filter(e=>e.type===type&&expStatus(e)==='met').length;
+          const col=done>=max?'color:#16a34a;font-weight:700':done>0?'color:var(--tx2)':'color:var(--bdr2)';
+          const label={single:'Single',short:'Short',extended:'Ext.',project:'Project',charity:'Charity'}[type]||type;
+          return`<span style="font-size:12px;${col}">${label} ${done}/${max}</span>`;
+        }).join('<span style="color:var(--bdr2)"> · </span>');
         return`<div class="r-row" onclick="APP.currentStudentId='${s.id}';APP.teacherStuTab='experiences';render()">
-          <div>
+          <div style="flex:1;min-width:0">
             <div class="r-name">${esc(s.name)}</div>
-            <div class="r-meta">${s.year} · ${exps.length} exp · ${met.filter(Boolean).length}/7 LOs · ${fc} file${fc!==1?'s':''}</div>
+            <div style="margin-top:4px;display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+              ${chips}
+              <span style="color:var(--bdr2)"> · </span>
+              <span style="font-size:12px;color:${losMet7===7?'#16a34a':'var(--tx3)'};font-weight:${losMet7===7?700:400}">${losMet7}/7 LOs</span>
+              ${pending?`<span style="font-size:11px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px;font-weight:600">${pending} pending</span>`:''}
+              ${feedback?`<span style="font-size:11px;background:#eff6ff;color:#1a4f8a;padding:1px 6px;border-radius:8px;font-weight:600">${feedback} feedback</span>`:''}
+            </div>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="lo-dots">${met.map(m=>`<div class="lo-dot ${m?'on':''}"></div>`).join('')}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeFromClass('${s.id}')">Remove</button>
-            <span style="color:var(--tx3)">›</span>
+            <span style="color:var(--tx3);font-size:18px">›</span>
           </div>
         </div>`
       }).join(''):`<div class="empty"><div class="empty-icon">👥</div><div class="empty-title">No students yet</div></div>`}
