@@ -374,7 +374,27 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 .pdf-tb-e{background:#dbeafe;color:#1a4f8a}.pdf-tb-p{background:#ede9fe;color:#5b21b6}
 .pdf-tb-c{background:#fce7f3;color:#9d174d}
 
-@media(max-width:700px){.stats{grid-template-columns:repeat(3,1fr)}.fr,.fr3{grid-template-columns:1fr}.main{padding:14px}.bar{padding:0 14px}.ev-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}}
+/* ── LOGIN SCREEN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
+.login-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);width:100%;max-width:380px;padding:36px;box-shadow:var(--sh2)}
+.login-logo-wrap{display:flex;align-items:center;justify-content:center;margin-bottom:24px}
+.login-logo{width:64px;height:64px;background:var(--acc);border-radius:16px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:30px;color:#fff}
+.login-title{font-family:'DM Serif Display',serif;font-size:22px;text-align:center;margin-bottom:4px}
+.login-sub{font-size:13px;color:var(--tx3);text-align:center;margin-bottom:24px}
+.login-err{background:var(--red-bg);color:var(--red);border:1px solid #fca5a5;border-radius:var(--r);padding:10px 14px;font-size:13px;margin-bottom:14px;text-align:center}
+.pin-dots{display:flex;gap:10px;justify-content:center;margin:18px 0}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bdr2);background:transparent;transition:all .15s}
+.pin-dot.filled{background:var(--acc);border-color:var(--acc)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.pin-key{padding:16px;border:1px solid var(--bdr);border-radius:var(--r);background:var(--surf);font-size:18px;font-weight:600;cursor:pointer;text-align:center;transition:all .12s;font-family:'DM Serif Display',serif}
+.pin-key:hover{background:var(--surf2);border-color:var(--bdr2)}
+.pin-key:active{background:var(--surf3);transform:scale(.97)}
+.pin-key.del{font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500}
+.user-select-list{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.user-select-btn{padding:12px 16px;border:1px solid var(--bdr);border-radius:var(--r);background:var(--surf);cursor:pointer;text-align:left;transition:all .12s;font-family:'DM Sans',sans-serif}
+.user-select-btn:hover{background:var(--surf2);border-color:var(--bdr2)}
+.user-select-name{font-size:14px;font-weight:600;color:var(--tx)}
+.user-select-role{font-size:12px;color:var(--tx3);margin-top:1px}
 @media(max-width:460px){.stats{grid-template-columns:1fr 1fr}}
 
 /* ── GEMINI AI PANEL ── */
@@ -424,9 +444,12 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
   </div>
   <div class="bar-right">
     <div class="sync-pill"><div class="dot" id="syncDot"></div><span id="syncTxt"></span></div>
-    <div class="rtog">
-      <button class="rtbtn on" id="btnS" onclick="switchRole('student')">Student</button>
-      <button class="rtbtn" id="btnT" onclick="switchRole('teacher')">Teacher</button>
+    <div id="barSession" style="display:none;align-items:center;gap:10px">
+      <div style="text-align:right">
+        <div id="barName" style="font-size:13px;font-weight:600;color:var(--tx)"></div>
+        <div id="barRole" style="font-size:11px;color:var(--tx3)"></div>
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="logout()">Sign out</button>
     </div>
   </div>
 </div>
@@ -475,6 +498,21 @@ const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE'; // Get from https://aistudio.
 // ══════════════════════════════════════════════════
 //  CONSTANTS
 // ══════════════════════════════════════════════════
+// ── PIN-based accounts ────────────────────────────────────────────
+const ACCOUNTS=[
+  {id:'t1',name:'CAS Coordinator',              pin:'1234',  role:'teacher'},
+  {id:'a1',name:'Pattanasit Khoopongsakorn',    pin:'1001',  role:'student',studentId:'r1'},
+  {id:'a2',name:'Emma Zitek',                   pin:'1002',  role:'student',studentId:'r2'},
+  {id:'a3',name:'Hiisan Kim',                   pin:'1003',  role:'student',studentId:'r3'},
+  {id:'a4',name:'Daisy Cheung',                 pin:'1004',  role:'student',studentId:'r4'},
+  {id:'a5',name:'Valeriia Iakovleva',            pin:'1005',  role:'student',studentId:'r5'},
+  {id:'a6',name:'Sebastian Simmons',            pin:'1006',  role:'student',studentId:'r6'},
+  {id:'a7',name:'Demo Student (Aisha)',          pin:'0000',  role:'student',studentId:'s1'},
+  {id:'a8',name:'Demo Teacher',                  pin:'9999',  role:'teacher'},
+];
+
+
+
 const LOs=[
   {id:'lo1',label:'LO1',title:'Strengths & Growth',        desc:'Identify own strengths and develop areas for personal growth.'},
   {id:'lo2',label:'LO2',title:'Challenges & Skills',       desc:'Demonstrate challenges undertaken, developing new skills.'},
@@ -517,14 +555,23 @@ const DUMMY={
   classes:[
     {id:'c1',name:'IB Year 12 — Class A (2024–25)'},
     {id:'c2',name:'IB Year 13 — Class B (2024–25)'},
+    {id:'c3',name:'IB CAS 2024–25 — BISP'},
   ],
   students:[
+    // Demo students
     {id:'s1',name:'Aisha Patel',   year:'Y12',classId:'c1'},
     {id:'s2',name:'Marcus Chen',   year:'Y12',classId:'c1'},
     {id:'s3',name:'Sofia Reyes',   year:'Y12',classId:'c1'},
     {id:'s4',name:'James Okafor', year:'Y13',classId:'c2'},
     {id:'s5',name:'Lena Kowalski',year:'Y13',classId:'c2'},
     {id:'s6',name:'Noah Tanaka',  year:'Y13',classId:'c2'},
+    // Real BISP students (Class 3)
+    {id:'r1',name:'Pattanasit Khoopongsakorn',year:'Y12',classId:'c3',nickname:'Mammoth',role:'Head Student'},
+    {id:'r2',name:'Emma Zitek',               year:'Y12',classId:'c3'},
+    {id:'r3',name:'Hiisan Kim',               year:'Y12',classId:'c3'},
+    {id:'r4',name:'Daisy Cheung',             year:'Y12',classId:'c3',role:'Head Student'},
+    {id:'r5',name:'Valeriia Iakovleva',        year:'Y12',classId:'c3'},
+    {id:'r6',name:'Sebastian Simmons',        year:'Y12',classId:'c3'},
   ],
   experiences:{
     s1:[
@@ -565,8 +612,9 @@ const DUMMY={
 //  STATE
 // ══════════════════════════════════════════════════
 let APP={
-  role:'student',
-  tab:'experiences',
+  // Session
+  session:null,          // {id, name, role, studentId} — null = not logged in
+  // Teacher state
   studentScreen:'home',
   currentLoId:null,
   loDetailTab:'activities',
@@ -578,6 +626,9 @@ let APP={
   currentClassId:null,
   currentStudentId:null,
   teacherStuTab:'experiences',
+  teacherExpFilter:null,        // which type card is active in teacher student view
+  teacherOverviewYear:'all',    // year filter for full overview: 'all'|'Y12'|'Y13'
+  teacherOverviewClass:'all',   // class filter for full overview
   logoUrl:null,
   myStudentId:'s1',
   gemOpen:false,
@@ -603,9 +654,9 @@ function saveAll(){
   lsSet('cas_v5',{
     students:APP.students,classes:APP.classes,
     experiences:APP.experiences,logoUrl:APP.logoUrl,
-    myStudentId:APP.myStudentId,
     reviewRecordings:APP.reviewRecordings,
-    proposalRecords:APP.proposalRecords
+    proposalRecords:APP.proposalRecords,
+    session:APP.session
   });
 }
 function loadAll(){
@@ -615,9 +666,9 @@ function loadAll(){
     APP.classes=d.classes||APP.classes;
     APP.experiences=d.experiences||APP.experiences;
     APP.logoUrl=d.logoUrl||null;
-    APP.myStudentId=d.myStudentId||APP.myStudentId;
     APP.reviewRecordings=d.reviewRecordings||{};
     APP.proposalRecords=d.proposalRecords||{};
+    APP.session=d.session||null;
   }
 }
 
@@ -1035,7 +1086,150 @@ function switchRole(r){
 }
 
 // ══════════════════════════════════════════════════
-//  APPROVAL HELPERS
+//  LOGIN / SESSION
+// ══════════════════════════════════════════════════
+let _loginStep='select'; // 'select' | 'pin'
+let _loginAccount=null;
+let _pinBuffer='';
+
+function renderLogin(){
+  document.getElementById('barSession').style.display='none';
+  showGemFab(false);
+  if(_loginStep==='select'){
+    document.getElementById('root').innerHTML=`
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo-wrap"><div class="login-logo">C</div></div>
+        <div class="login-title">CAS Portfolio</div>
+        <div class="login-sub">BISP · IB CAS 2017 · Select your name</div>
+        <div id="loginErr"></div>
+        <div class="user-select-list">
+          ${ACCOUNTS.map(a=>`<button class="user-select-btn" onclick="selectAccount('${a.id}')">
+            <div class="user-select-name">${esc(a.name)}</div>
+            <div class="user-select-role">${a.role==='teacher'?'CAS Coordinator / Teacher':'Student'}</div>
+          </button>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  } else {
+    // PIN entry screen
+    const acc=_loginAccount;
+    document.getElementById('root').innerHTML=`
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo-wrap"><div class="login-logo">C</div></div>
+        <div class="login-title">${esc(acc.name)}</div>
+        <div class="login-sub">${acc.role==='teacher'?'CAS Coordinator':'Student'} · Enter your 4-digit PIN</div>
+        <div id="loginErr"></div>
+        <div class="pin-dots" id="pinDots">
+          ${[0,1,2,3].map(i=>`<div class="pin-dot" id="pd${i}"></div>`).join('')}
+        </div>
+        <div class="pin-pad">
+          ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinKey('${n}')">${n}</button>`).join('')}
+          <button class="pin-key del" onclick="_loginStep='select';_pinBuffer='';renderLogin()" title="Back">←</button>
+          <button class="pin-key" onclick="pinKey('0')">0</button>
+          <button class="pin-key del" onclick="pinDel()">⌫</button>
+        </div>
+      </div>
+    </div>`;
+  }
+}
+
+function selectAccount(id){
+  _loginAccount=ACCOUNTS.find(a=>a.id===id);
+  _loginStep='pin';
+  _pinBuffer='';
+  renderLogin();
+}
+
+function pinKey(k){
+  if(_pinBuffer.length>=4)return;
+  _pinBuffer+=k;
+  updatePinDots();
+  if(_pinBuffer.length===4) tryPinLogin();
+}
+
+function pinDel(){
+  _pinBuffer=_pinBuffer.slice(0,-1);
+  updatePinDots();
+  clearLoginErr();
+}
+
+function pinBack(){
+  _loginStep='select';_pinBuffer='';renderLogin();
+}
+
+function updatePinDots(){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('pd'+i);
+    if(d)d.classList.toggle('filled',i<_pinBuffer.length);
+  }
+}
+
+function clearLoginErr(){
+  const e=document.getElementById('loginErr');
+  if(e)e.innerHTML='';
+}
+
+function showLoginErr(msg){
+  const e=document.getElementById('loginErr');
+  if(e)e.innerHTML=`<div class="login-err">${esc(msg)}</div>`;
+  _pinBuffer='';updatePinDots();
+}
+
+function tryPinLogin(){
+  const acc=_loginAccount;
+  if(!acc)return;
+  if(_pinBuffer===acc.pin){
+    // Successful login
+    APP.session={id:acc.id,name:acc.name,role:acc.role,studentId:acc.studentId||null};
+    if(acc.role==='student'&&acc.studentId){
+      APP.myStudentId=acc.studentId;
+    }
+    saveAll();
+    initSession();
+  } else if(_pinBuffer.length>=acc.pin.length){
+    showLoginErr('Incorrect PIN — please try again');
+  }
+}
+
+function initSession(){
+  const s=APP.session;
+  if(!s){renderLogin();return;}
+  // Update topbar
+  const barSess=document.getElementById('barSession');
+  if(barSess){
+    barSess.style.display='flex';
+    document.getElementById('barName').textContent=s.name;
+    document.getElementById('barRole').textContent=s.role==='teacher'?'CAS Coordinator':'Student';
+  }
+  if(s.role==='student'){
+    APP.myStudentId=s.studentId||APP.myStudentId;
+    showGemFab(true);
+    APP.studentScreen='home';APP.currentLoId=null;
+    APP.studentTab='experience';APP.studentExpType='single';APP._openExpId=null;
+    renderStudentView();
+  } else {
+    showGemFab(false);
+    APP.teacherTab='classes';APP.currentClassId=null;APP.currentStudentId=null;
+    renderTeacherView();
+  }
+}
+
+function logout(){
+  APP.session=null;
+  _loginStep='select';_pinBuffer='';_loginAccount=null;
+  APP.gemOpen=false;
+  const panel=document.getElementById('gemPanel');if(panel)panel.classList.add('hidden');
+  saveAll();
+  renderLogin();
+}
+
+// Remove old student picker — students are now locked to their login
+function renderStudentPicker(){return'';}
+
+// Kept for compatibility — role switching no longer used
+function switchRole(r){}
 // ══════════════════════════════════════════════════
 function expStatus(e){return e.status||'draft'}
 function loMetApproved(sid){
@@ -1088,9 +1282,7 @@ function renderStudentPicker(){
 function renderStudentView(){
   if(APP.studentScreen==='lo-detail'&&APP.currentLoId){renderLODetailScreen();return}
   renderStudentHome();
-}
-
-// LO targets (from teacher spec): LO1=16,LO2=16,LO3=6,LO4=6,LO5=6,LO6=3,LO7=3
+}// LO targets (from teacher spec): LO1=16,LO2=16,LO3=6,LO4=6,LO5=6,LO6=3,LO7=3
 const LO_TARGETS={lo1:16,lo2:16,lo3:6,lo4:6,lo5:6,lo6:3,lo7:3};
 // Experience slot counts per type
 const EXP_SLOTS={single:10,short:3,extended:2,project:1,charity:1};
@@ -1098,15 +1290,15 @@ const EXP_SLOTS={single:10,short:3,extended:2,project:1,charity:1};
 function renderStudentHome(){
   const sid=APP.myStudentId;
   const stu=APP.students.find(s=>s.id===sid);
+  const stuName=APP.session?.name||stu?.name||'';
   const list=expsFor(sid);
   const feedbackItems=list.filter(e=>expStatus(e)==='feedback');
   const pendingItems=list.filter(e=>expStatus(e)==='pending');
 
   document.getElementById('root').innerHTML=`
   <div class="main">
-    ${renderStudentPicker()}
     <div class="ptitle">
-      <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS 2017 · ${esc(stu?stu.name:'')}</div></div>
+      <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS 2017 · ${esc(stuName)}</div></div>
       <button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button>
     </div>
 
@@ -1868,36 +2060,69 @@ function renderClassList(){
 
 function renderOverviewTable(){
   if(!APP.classes.length)return`<div class="empty"><div class="empty-icon">📊</div><div class="empty-title">No classes yet</div></div>`;
-  return`<div class="card ov-wrap"><table class="ov-table"><thead><tr>
-    <th>Student</th><th>Year</th><th>Single</th><th>Short</th><th>Ext.</th><th>Proj.</th><th>Charity</th>
-    <th style="color:#9d174d">C</th><th style="color:#92400e">A</th><th style="color:#2d6a4f">S</th>
-    <th>Files</th>
-    ${LOs.map(lo=>`<th>${lo.label}</th>`).join('')}
-  </tr></thead><tbody>
-  ${APP.classes.map(cls=>`
-    <tr class="cls-r"><td colspan="${11+LOs.length}">${esc(cls.name)}</td></tr>
-    ${APP.students.filter(s=>s.classId===cls.id).map(s=>{
-      const exps=expsFor(s.id);const met=losMet(exps);
-      const fc=exps.reduce((n,e)=>n+(e.files||[]).length,0);
-      const cCount=exps.filter(e=>e.creativity).length;
-      const aCount=exps.filter(e=>e.activity).length;
-      const sCount=exps.filter(e=>e.service).length;
-      return`<tr class="stu-r" onclick="APP.currentStudentId='${s.id}';APP.currentClassId='${cls.id}';APP.teacherStuTab='experiences';render()">
-        <td><strong>${esc(s.name)}</strong></td><td>${s.year}</td>
-        <td>${exps.filter(e=>e.type==='single').length}/${EXP_SLOTS.single}</td>
-        <td>${exps.filter(e=>e.type==='short').length}/${EXP_SLOTS.short}</td>
-        <td>${exps.filter(e=>e.type==='extended').length}/${EXP_SLOTS.extended}</td>
-        <td>${exps.filter(e=>e.type==='project').length}/${EXP_SLOTS.project}</td>
-        <td>${exps.filter(e=>e.type==='charity').length}/${EXP_SLOTS.charity}</td>
-        <td style="color:#9d174d;font-weight:600">${cCount}</td>
-        <td style="color:#92400e;font-weight:600">${aCount}</td>
-        <td style="color:#2d6a4f;font-weight:600">${sCount}</td>
-        <td>${fc}</td>
-        ${met.map(m=>`<td class="${m?'ov-y':'ov-n'}">${m?'✓':'·'}</td>`).join('')}
-      </tr>`
+
+  const yearFilter=APP.teacherOverviewYear||'all';
+  const classFilter=APP.teacherOverviewClass||'all';
+
+  // Filter students
+  let filteredStudents=APP.students;
+  if(yearFilter!=='all') filteredStudents=filteredStudents.filter(s=>s.year===yearFilter);
+  if(classFilter!=='all') filteredStudents=filteredStudents.filter(s=>s.classId===classFilter);
+
+  // Group by class for display
+  const visibleClasses=APP.classes.filter(cls=>filteredStudents.some(s=>s.classId===cls.id));
+
+  return`<div>
+    <!-- Filters -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:600;color:var(--tx2)">Filter:</span>
+      <select style="width:auto;padding:6px 12px;font-size:13px" onchange="APP.teacherOverviewYear=this.value;render()">
+        <option value="all" ${yearFilter==='all'?'selected':''}>All years</option>
+        <option value="Y12" ${yearFilter==='Y12'?'selected':''}>Year 12</option>
+        <option value="Y13" ${yearFilter==='Y13'?'selected':''}>Year 13</option>
+      </select>
+      <select style="width:auto;padding:6px 12px;font-size:13px" onchange="APP.teacherOverviewClass=this.value;render()">
+        <option value="all" ${classFilter==='all'?'selected':''}>All classes</option>
+        ${APP.classes.map(cls=>`<option value="${cls.id}" ${classFilter===cls.id?'selected':''}>${esc(cls.name)}</option>`).join('')}
+      </select>
+      ${(yearFilter!=='all'||classFilter!=='all')?`<button class="btn btn-xs btn-ghost" onclick="APP.teacherOverviewYear='all';APP.teacherOverviewClass='all';render()">✕ Clear filters</button>`:''}
+      <span style="font-size:13px;color:var(--tx3)">${filteredStudents.length} student${filteredStudents.length!==1?'s':''} shown</span>
+    </div>
+
+    <div class="card ov-wrap"><table class="ov-table"><thead><tr>
+      <th>Student</th><th>Year</th><th>Single</th><th>Short</th><th>Ext.</th><th>Proj.</th><th>Charity</th>
+      <th style="color:#9d174d">C</th><th style="color:#92400e">A</th><th style="color:#2d6a4f">S</th>
+      <th>Files</th>
+      ${LOs.map(lo=>`<th>${lo.label}</th>`).join('')}
+    </tr></thead><tbody>
+    ${visibleClasses.map(cls=>{
+      const classStudents=filteredStudents.filter(s=>s.classId===cls.id);
+      if(!classStudents.length)return'';
+      return`
+        <tr class="cls-r"><td colspan="${11+LOs.length}">${esc(cls.name)}</td></tr>
+        ${classStudents.map(s=>{
+          const exps=expsFor(s.id);const met=losMet(exps);
+          const fc=exps.reduce((n,e)=>n+(e.files||[]).length,0);
+          const cCount=exps.filter(e=>e.creativity).length;
+          const aCount=exps.filter(e=>e.activity).length;
+          const sCount=exps.filter(e=>e.service).length;
+          return`<tr class="stu-r" onclick="APP.currentStudentId='${s.id}';APP.currentClassId='${cls.id}';APP.teacherStuTab='experiences';APP.teacherExpFilter=null;render()">
+            <td><strong>${esc(s.name)}</strong></td><td>${s.year}</td>
+            <td>${exps.filter(e=>e.type==='single').length}/${EXP_SLOTS.single}</td>
+            <td>${exps.filter(e=>e.type==='short').length}/${EXP_SLOTS.short}</td>
+            <td>${exps.filter(e=>e.type==='extended').length}/${EXP_SLOTS.extended}</td>
+            <td>${exps.filter(e=>e.type==='project').length}/${EXP_SLOTS.project}</td>
+            <td>${exps.filter(e=>e.type==='charity').length}/${EXP_SLOTS.charity}</td>
+            <td style="color:#9d174d;font-weight:600">${cCount}</td>
+            <td style="color:#92400e;font-weight:600">${aCount}</td>
+            <td style="color:#2d6a4f;font-weight:600">${sCount}</td>
+            <td>${fc}</td>
+            ${met.map(m=>`<td class="${m?'ov-y':'ov-n'}">${m?'✓':'·'}</td>`).join('')}
+          </tr>`
+        }).join('')}`
     }).join('')}
-  `).join('')}
-  </tbody></table></div>`
+    </tbody></table></div>
+  </div>`;
 }
 
 function renderTeacherClass(){
@@ -1952,38 +2177,108 @@ function renderTeacherStudent(){
   const cls=APP.classes.find(c=>c.id===APP.currentClassId)||APP.classes.find(c=>c.id===stu.classId);
   const sid=stu.id;const {list,met,c}=portfolioStats(sid);
   const fc=list.reduce((n,e)=>n+(e.files||[]).length,0);
+  // Active filter — which type card is selected
+  const activeType=APP.teacherExpFilter||null; // null = show all
+
   document.getElementById('root').innerHTML=`
   <div class="main">
     <div class="back-row">
-      <button class="btn" onclick="APP.currentStudentId=null;render()">${cls?`← ${esc(cls.name)}`:'← Back'}</button>
+      <button class="btn" onclick="APP.currentStudentId=null;APP.teacherExpFilter=null;render()">${cls?`← ${esc(cls.name)}`:'← Back'}</button>
       <div><div class="ph">${esc(stu.name)}</div><div class="psub">${stu.year} · ${fc} evidence file${fc!==1?'s':''}</div></div>
       <div style="margin-left:auto"><button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button></div>
     </div>
-    <div class="stats">
-      <div class="sc"><div class="sl">Single</div><div class="sv">${c.single}</div></div>
-      <div class="sc"><div class="sl">Short</div><div class="sv">${c.short}</div></div>
-      <div class="sc"><div class="sl">Extended</div><div class="sv">${c.extended}</div></div>
-      <div class="sc"><div class="sl">Project</div><div class="sv">${c.project}</div></div>
-      <div class="sc"><div class="sl">Charity</div><div class="sv">${c.charity}</div></div>
-      <div class="sc hi"><div class="sl">LOs met</div><div class="sv">${met.filter(Boolean).length}/7</div></div>
+
+    <!-- Clickable type filter cards -->
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:22px">
+      ${[
+        {key:null, label:'All', count:list.length},
+        {key:'single',   label:'Single',  count:c.single},
+        {key:'short',    label:'Short',   count:c.short},
+        {key:'extended', label:'Extended',count:c.extended},
+        {key:'project',  label:'Project', count:c.project},
+        {key:'charity',  label:'Charity', count:c.charity},
+      ].map(({key,label,count})=>{
+        const isActive=activeType===key;
+        return`<div class="sc" style="cursor:pointer;${isActive?'background:var(--acc);border-color:var(--acc)':''}" onclick="APP.teacherExpFilter=${key===null?'null':`'${key}'`};APP.teacherStuTab='experiences';render()">
+          <div class="sl" style="${isActive?'color:rgba(255,255,255,.75)':''}">${label}</div>
+          <div class="sv" style="${isActive?'color:#fff':''}">${count}</div>
+        </div>`
+      }).join('')}
+      <div class="sc hi">
+        <div class="sl">LOs met</div>
+        <div class="sv">${met.filter(Boolean).length}/7</div>
+      </div>
     </div>
+
     <div class="tabs">
       <button class="tab ${APP.teacherStuTab==='experiences'?'on':''}" onclick="APP.teacherStuTab='experiences';render()">Experiences</button>
       <button class="tab ${APP.teacherStuTab==='los'?'on':''}" onclick="APP.teacherStuTab='los';render()">Learning Outcomes</button>
       <button class="tab ${APP.teacherStuTab==='requirements'?'on':''}" onclick="APP.teacherStuTab='requirements';render()">Requirements</button>
     </div>
-    ${APP.teacherStuTab==='experiences'  ? renderExpList(sid,false) : ''}
+    ${APP.teacherStuTab==='experiences'  ? renderExpListTeacher(sid, activeType) : ''}
     ${APP.teacherStuTab==='los'          ? renderLOsView(sid)        : ''}
     ${APP.teacherStuTab==='requirements' ? renderReqsView(sid)       : ''}
     ${renderRecordings(sid,true)}
   </div>`;
 }
 
+function renderExpListTeacher(sid, filterType){
+  const all=expsFor(sid);
+  const list=filterType?all.filter(e=>e.type===filterType):all;
+  if(!list.length)return`<div class="empty"><div class="empty-icon">📋</div>
+    <div class="empty-title">${filterType?`No ${ET[filterType]?.label||filterType} experiences yet`:'No experiences yet'}</div>
+    <div>${filterType?'Click "All" to see all experience types.':'No experiences logged yet.'}</div></div>`;
+
+  // Status colour mapping for whole card border
+  const borderCol={met:'#16a34a',pending:'#f59e0b',feedback:'#1a4f8a',draft:'#dc2626'};
+  const bgCol={met:'#f0faf2',pending:'#fffbeb',feedback:'#eff6ff',draft:'#fff5f5'};
+
+  return`<div class="exp-list">${list.map(e=>{
+    const t=ET[e.type]||{};
+    const status=expStatus(e);
+    const bc=borderCol[status]||borderCol.draft;
+    const bg=bgCol[status]||bgCol.draft;
+    const files=e.files||[];
+    return`<div style="background:${bg};border:2px solid ${bc};border-radius:var(--rl);padding:16px 20px;box-shadow:var(--sh);margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">
+            <span style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:600">${esc(e.name)||'Untitled'}</span>
+            ${statusPill(status)}
+          </div>
+          <div style="font-size:13px;color:var(--tx3);margin-bottom:8px">${[e.when,e.where,e.who].filter(Boolean).map(esc).join(' · ')}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            <span class="badge ${t.bc||''}">${t.label||e.type}</span>
+            <span class="badge b-unmet">${esc(e.year||'')}</span>
+            ${[e.creativity&&'<span class="badge b-c">Creativity</span>',e.activity&&'<span class="badge b-a">Activity</span>',e.service&&'<span class="badge b-s">Service</span>'].filter(Boolean).join('')}
+            ${files.length?`<span class="badge" style="background:var(--blu-bg);color:var(--blu)">📎 ${files.length} file${files.length!==1?'s':''}</span>`:''}
+          </div>
+        </div>
+        <!-- Teacher approval actions -->
+        ${status==='pending'?`<div style="display:flex;gap:6px;flex-direction:column;flex-shrink:0">
+          <button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="teacherMarkMet('${sid}','${e.id}')">✓ Mark as Met</button>
+          <button class="btn btn-sm" onclick="openTeacherFeedback('${sid}','${e.id}')">↩ Return with feedback</button>
+        </div>`:''}
+      </div>
+      ${e.what?`<div style="font-size:14px;color:var(--tx2);margin-top:10px;padding-top:10px;border-top:1px solid ${bc}40;line-height:1.6">${esc(e.what)}</div>`:''}
+      ${status==='feedback'&&e.teacherFeedback?`<div style="background:#fff;border:1px solid #1a4f8a;border-radius:8px;padding:10px 13px;margin-top:10px;font-size:13px"><span style="font-weight:700;color:#1a4f8a">Your feedback: </span>${esc(e.teacherFeedback)}</div>`:''}
+      <!-- LO summary -->
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:10px">
+        ${LOs.filter(lo=>t.los?.includes(lo.id)).map(lo=>{
+          const d=(e.los||{})[lo.id];
+          return`<span class="badge ${d&&d.met?'b-met':'b-unmet'}" style="font-size:11px">${lo.label}${d&&d.met?' ✓':''}</span>`
+        }).join('')}
+      </div>
+    </div>`
+  }).join('')}</div>`;
+}
+
 // ══════════════════════════════════════════════════
 //  MAIN RENDER
 // ══════════════════════════════════════════════════
 function render(){
-  if(APP.role==='student')renderStudentView();
+  if(!APP.session){renderLogin();return;}
+  if(APP.session.role==='student') renderStudentView();
   else renderTeacherView();
 }
 
@@ -2886,8 +3181,15 @@ function boot(){
   }
   saveAll();
 
-  renderLogo();render();
-  showGemFab(APP.role==='student');
+  renderLogo();
+
+  // Route based on session
+  if(APP.session){
+    initSession();
+  } else {
+    renderLogin();
+  }
+
   if(configured()){
     dot('busy','Connecting…');
     fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'ping'})})
