@@ -555,7 +555,7 @@ const DUMMY={
   classes:[
     {id:'c1',name:'IB Year 12 — Class A (2024–25)'},
     {id:'c2',name:'IB Year 13 — Class B (2024–25)'},
-    {id:'c3',name:'IB CAS 2024–25 — BISP'},
+    {id:'c3',name:'Test Group'},
   ],
   students:[
     // Demo students
@@ -1101,14 +1101,15 @@ function renderLogin(){
       <div class="login-card">
         <div class="login-logo-wrap"><div class="login-logo">C</div></div>
         <div class="login-title">CAS Portfolio</div>
-        <div class="login-sub">BISP · IB CAS 2017 · Select your name</div>
+        <div class="login-sub">BISP · IB CAS · Select your name to sign in</div>
         <div id="loginErr"></div>
-        <div class="user-select-list">
-          ${ACCOUNTS.map(a=>`<button class="user-select-btn" onclick="selectAccount('${a.id}')">
-            <div class="user-select-name">${esc(a.name)}</div>
-            <div class="user-select-role">${a.role==='teacher'?'CAS Coordinator / Teacher':'Student'}</div>
-          </button>`).join('')}
+        <div class="fg" style="margin-bottom:14px">
+          <select id="accountSelect" style="font-size:15px;padding:11px 14px;border-radius:var(--r);border:1.5px solid var(--bdr);width:100%;background:var(--surf);color:var(--tx);cursor:pointer">
+            <option value="">— Select your name —</option>
+            ${ACCOUNTS.map(a=>`<option value="${a.id}">${esc(a.name)}${a.role==='teacher'?' (Teacher)':''}</option>`).join('')}
+          </select>
         </div>
+        <button class="btn btn-p" style="width:100%;padding:12px;font-size:15px;justify-content:center" onclick="continueLogin()">Continue →</button>
       </div>
     </div>`;
   } else {
@@ -1133,6 +1134,16 @@ function renderLogin(){
       </div>
     </div>`;
   }
+}
+
+function continueLogin(){
+  const sel=document.getElementById('accountSelect');
+  if(!sel||!sel.value){
+    const e=document.getElementById('loginErr');
+    if(e)e.innerHTML=`<div class="login-err">Please select your name from the list.</div>`;
+    return;
+  }
+  selectAccount(sel.value);
 }
 
 function selectAccount(id){
@@ -1298,7 +1309,7 @@ function renderStudentHome(){
   document.getElementById('root').innerHTML=`
   <div class="main">
     <div class="ptitle">
-      <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS 2017 · ${esc(stuName)}</div></div>
+      <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS · ${esc(stuName)}</div></div>
       <button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button>
     </div>
 
@@ -1886,7 +1897,7 @@ function renderTeacherHome(){
   document.getElementById('root').innerHTML=`
   <div class="main">
     <div class="ptitle">
-      <div><div class="ph">Classes</div><div class="psub">IB CAS 2017</div></div>
+      <div><div class="ph">Classes</div><div class="psub">IB CAS</div></div>
       <button class="btn btn-p" onclick="openAddClass()">+ New class</button>
     </div>
     <div class="tabs">
@@ -2635,7 +2646,7 @@ function printPDF(sid){
       <div class="pdf-sig">Student signature &amp; date<br><br><br></div>
       <div class="pdf-sig">CAS supervisor signature &amp; date<br><br><br></div>
     </div>
-    <div class="pdf-foot"><span>CAS Portfolio Tracker · IB CAS 2017</span><span>Generated ${today}</span></div>
+    <div class="pdf-foot"><span>CAS Portfolio Tracker · IB CAS</span><span>Generated ${today}</span></div>
   </div>`;
 
   // Build the full print document as a string
@@ -2752,7 +2763,7 @@ function openProposalFormStandalone(sid, type){
     <div class="modal-h">
       <div>
         <div class="modal-title">${title}</div>
-        <div style="font-size:13px;color:var(--tx3);margin-top:2px">BISP · IB CAS 2017 · ${isCharity?'Charity Fundraiser':'CAS Project'}</div>
+        <div style="font-size:13px;color:var(--tx3);margin-top:2px">BISP · IB CAS · ${isCharity?'Charity Fundraiser':'CAS Project'}</div>
       </div>
       <button class="mclose" onclick="setModal(null)">×</button>
     </div>
