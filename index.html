@@ -374,7 +374,48 @@ hr{border:none;border-top:1px solid var(--bdr);margin:14px 0}
 .pdf-tb-e{background:#dbeafe;color:#1a4f8a}.pdf-tb-p{background:#ede9fe;color:#5b21b6}
 .pdf-tb-c{background:#fce7f3;color:#9d174d}
 
-/* ── LOGIN SCREEN ── */
+/* ── COMMENTS THREAD ── */
+.comments-thread{margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
+.comment-item{display:flex;gap:10px;margin-bottom:10px}
+.comment-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.comment-avatar.teacher{background:var(--acc)}
+.comment-avatar.student{background:var(--blu)}
+.comment-bubble{flex:1;background:var(--surf2);border-radius:0 10px 10px 10px;padding:9px 12px;font-size:13px;line-height:1.5}
+.comment-bubble.teacher-bubble{background:#fdf0e8;border-radius:10px 0 10px 10px}
+.comment-meta{font-size:11px;color:var(--tx3);margin-bottom:3px;font-weight:600}
+.comment-input-row{display:flex;gap:8px;margin-top:8px}
+.comment-input{flex:1;border:1px solid var(--bdr);border-radius:8px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:13px;resize:none;height:38px;outline:none;transition:border-color .15s}
+.comment-input:focus{border-color:var(--acc)}
+.summary-overlay{position:fixed;inset:0;z-index:400;background:var(--bg);overflow-y:auto}
+.summary-topbar{position:sticky;top:0;z-index:10;background:var(--surf);border-bottom:1px solid var(--bdr);padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh)}
+.summary-body{max-width:780px;margin:0 auto;padding:28px 20px 60px}
+.sum-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;padding-bottom:16px;border-bottom:3px solid var(--acc)}
+.sum-title{font-family:'DM Serif Display',serif;font-size:26px;color:var(--tx)}
+.sum-sub{font-size:13px;color:var(--tx3);margin-top:3px}
+.sum-stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:22px}
+.sum-stat{background:var(--surf2);border-radius:var(--r);padding:12px;text-align:center;border:1px solid var(--bdr)}
+.sum-stat-l{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.sum-stat-v{font-size:22px;font-family:'DM Serif Display',serif;color:var(--tx)}
+.sum-stat.hi{background:var(--acc);border-color:var(--acc)}
+.sum-stat.hi .sum-stat-l{color:rgba(255,255,255,.7)}.sum-stat.hi .sum-stat-v{color:#fff}
+.sum-sec{font-family:'DM Serif Display',serif;font-size:18px;margin:20px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--bdr)}
+.sum-lo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.sum-lo{border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px}
+.sum-lo.comp{background:#f0faf2;border-color:#6ee7b7}
+.sum-lo-hdr{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.sum-exp-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr)}
+.sum-exp-row:last-child{border-bottom:none}
+.sum-req-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px}
+.sum-req-table th{text-align:left;padding:8px 10px;background:var(--surf2);font-weight:600;color:var(--tx2);font-size:11px;text-transform:uppercase}
+.sum-req-table td{padding:8px 10px;border-bottom:1px solid var(--bdr)}
+.sum-ok{color:#16a34a;font-weight:700}.sum-no{color:#dc2626}
+.sum-notes{border:1px solid var(--bdr);border-radius:var(--r);padding:14px;min-height:80px;background:var(--surf);font-size:13px;color:var(--tx3);font-style:italic}
+@media print{
+  .summary-topbar,.no-print{display:none!important}
+  .summary-overlay{position:static}
+  .summary-body{padding:0;max-width:100%}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg)}
 .login-card{background:var(--surf);border:1px solid var(--bdr);border-radius:var(--rl);width:100%;max-width:380px;padding:36px;box-shadow:var(--sh2)}
 .login-logo-wrap{display:flex;align-items:center;justify-content:center;margin-bottom:24px}
@@ -498,23 +539,42 @@ const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE'; // Get from https://aistudio.
 // ══════════════════════════════════════════════════
 //  CONSTANTS
 // ══════════════════════════════════════════════════
+// ── Security constants ─────────────────────────────────────────────
+const PIN_MAX_ATTEMPTS=5;
+const PIN_LOCKOUT_MS=5*60*1000;  // 5 minutes
+const SESSION_TIMEOUT_MS=60*60*1000; // 60 minutes inactivity
+let _loginAttempts={};  // accountId -> {count, lockedUntil}
+let _activityTimer=null;
+
+function resetActivityTimer(){
+  clearTimeout(_activityTimer);
+  if(APP.session){
+    _activityTimer=setTimeout(()=>{
+      showToast('Session expired after 60 minutes — please sign in again.','err');
+      setTimeout(logout,2000);
+    },SESSION_TIMEOUT_MS);
+  }
+}
+// Call on any meaningful user interaction
+function touchActivity(){ if(APP.session) resetActivityTimer(); }
+
 // ── PIN-based accounts ────────────────────────────────────────────
 const ACCOUNTS=[
-  {id:'t1',name:'CAS Coordinator',              pin:'1234',  role:'teacher'},
-  {id:'a1',name:'Pattanasit Khoopongsakorn',    pin:'1001',  role:'student',studentId:'r1'},
-  {id:'a2',name:'Emma Zitek',                   pin:'1002',  role:'student',studentId:'r2'},
-  {id:'a3',name:'Hiisan Kim',                   pin:'1003',  role:'student',studentId:'r3'},
-  {id:'a4',name:'Daisy Cheung',                 pin:'1004',  role:'student',studentId:'r4'},
-  {id:'a5',name:'Valeriia Iakovleva',            pin:'1005',  role:'student',studentId:'r5'},
-  {id:'a6',name:'Sebastian Simmons',            pin:'1006',  role:'student',studentId:'r6'},
-  {id:'a9', name:'Michael Beckett',             pin:'1007',  role:'student',studentId:'r7'},
-  {id:'a10',name:'Luna Cumming',              pin:'1008',  role:'student',studentId:'r8'},
-  {id:'a11',name:'Anzhelika Ivashchenko',        pin:'1009',  role:'student',studentId:'r9'},
-  {id:'a12',name:'Zinaida Korneva',             pin:'1010',  role:'student',studentId:'r10'},
-  {id:'a13',name:'Yann Kunz',                   pin:'1011',  role:'student',studentId:'r11'},
-  {id:'a14',name:'Andy Tang',                pin:'1012',  role:'student',studentId:'r12'},
-  {id:'a7',name:'Demo Student (Aisha)',          pin:'0000',  role:'student',studentId:'s1'},
-  {id:'a8',name:'Demo Teacher',                  pin:'9999',  role:'teacher'},
+  {id:'t1',name:'CAS Coordinator',              pin:'134729',  role:'teacher'},
+  {id:'a1',name:'Pattanasit Khoopongsakorn',    pin:'281047',  role:'student',studentId:'r1'},
+  {id:'a2',name:'Emma Zitek',                   pin:'395612',  role:'student',studentId:'r2'},
+  {id:'a3',name:'Hiisan Kim',                   pin:'407283',  role:'student',studentId:'r3'},
+  {id:'a4',name:'Daisy Cheung',                 pin:'516934',  role:'student',studentId:'r4'},
+  {id:'a5',name:'Valeriia Iakovleva',            pin:'629071',  role:'student',studentId:'r5'},
+  {id:'a6',name:'Sebastian Simmons',            pin:'743852',  role:'student',studentId:'r6'},
+  {id:'a9', name:'Michael Beckett',             pin:'856193',  role:'student',studentId:'r7'},
+  {id:'a10',name:'Luna Cumming',              pin:'962748',  role:'student',studentId:'r8'},
+  {id:'a11',name:'Anzhelika Ivashchenko',        pin:'174025',  role:'student',studentId:'r9'},
+  {id:'a12',name:'Zinaida Korneva',             pin:'285316',  role:'student',studentId:'r10'},
+  {id:'a13',name:'Yann Kunz',                   pin:'391487',  role:'student',studentId:'r11'},
+  {id:'a14',name:'Andy Tang',                pin:'406852',  role:'student',studentId:'r12'},
+  {id:'a7',name:'Demo Student (Aisha)',          pin:'000000',  role:'student',studentId:'s1'},
+  {id:'a8',name:'Demo Teacher',                  pin:'999999',  role:'teacher'},
 ];
 
 
@@ -1023,7 +1083,7 @@ function renderLOsView(sid){
       <div class="lo-h">
         <div class="lo-num ${met?'met':''}">${lo.label}</div>
         <div style="flex:1"><div style="font-weight:600;font-size:14px">${lo.title}</div><div style="font-size:12px;color:var(--tx3)">${lo.desc}</div></div>
-        <span class="badge ${met?'b-met':'b-unmet'}" style="flex-shrink:0">${met?'Met':'Not yet'}</span>
+        <span class="badge ${met?'b-met':'b-unmet'}" style="flex-shrink:0">${met?'Completed':'Not yet'}</span>
       </div>
       ${rel.length?rel.map(e=>{
         const d=e.los[lo.id];
@@ -1034,7 +1094,7 @@ function renderLOsView(sid){
           ${d.reflection?`<div style="color:var(--tx2);margin-bottom:3px;font-style:italic">${esc(d.reflection)}</div>`:''}
           ${d.evidence?`<div style="color:var(--tx3);font-size:12px;margin-bottom:5px">Notes: ${esc(d.evidence)}</div>`:''}
           ${relFiles.length?`<div class="lo-entry-files">${relFiles.map(f=>`<a href="${esc(f.driveUrl||'#')}" target="_blank" class="lo-file-chip"><span class="chip-icon">${fileIcon(f.mimeType)}</span>${esc(f.fileName)}</a>`).join('')}</div>`:''}
-          <span class="badge ${d.met?'b-met':'b-unmet'}" style="margin-top:5px;display:inline-block">${d.met?'Met':'Not yet met'}</span>
+          <span class="badge ${d.met?'b-met':'b-unmet'}" style="margin-top:5px;display:inline-block">${d.met?'Completed':'Not yet completed'}</span>
         </div>`
       }).join(''):`<div style="font-size:13px;color:var(--tx3);padding:3px 0">No experiences linked to this outcome yet.</div>`}
     </div>`
@@ -1071,7 +1131,7 @@ function renderReqsView(sid){
     ${LOs.map((lo,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)">
       <div class="lo-num ${met[i]?'met':''}" style="width:30px;height:30px;font-size:11px">${lo.label}</div>
       <div style="flex:1"><div style="font-size:14px;font-weight:600">${lo.title}</div><div style="font-size:12px;color:var(--tx3)">${lo.desc}</div></div>
-      <span class="badge ${met[i]?'b-met':'b-unmet'}">${met[i]?'Met':'Not yet met'}</span>
+      <span class="badge ${met[i]?'b-met':'b-unmet'}">${met[i]?'Completed':'Not yet completed'}</span>
     </div>`).join('')}
   </div>`
 }
@@ -1132,10 +1192,10 @@ function renderLogin(){
       <div class="login-card">
         <div class="login-logo-wrap"><div class="login-logo">C</div></div>
         <div class="login-title">${esc(acc.name)}</div>
-        <div class="login-sub">${acc.role==='teacher'?'CAS Coordinator':'Student'} · Enter your 4-digit PIN</div>
+        <div class="login-sub">${acc.role==='teacher'?'CAS Coordinator':'Student'} · Enter your 6-digit PIN</div>
         <div id="loginErr"></div>
         <div class="pin-dots" id="pinDots">
-          ${[0,1,2,3].map(i=>`<div class="pin-dot" id="pd${i}"></div>`).join('')}
+          ${[0,1,2,3,4,5].map(i=>`<div class="pin-dot" id="pd${i}"></div>`).join('')}
         </div>
         <div class="pin-pad">
           ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinKey('${n}')">${n}</button>`).join('')}
@@ -1166,10 +1226,10 @@ function selectAccount(id){
 }
 
 function pinKey(k){
-  if(_pinBuffer.length>=4)return;
+  if(_pinBuffer.length>=6)return;
   _pinBuffer+=k;
   updatePinDots();
-  if(_pinBuffer.length===4) tryPinLogin();
+  if(_pinBuffer.length===6) tryPinLogin();
 }
 
 function pinDel(){
@@ -1183,7 +1243,7 @@ function pinBack(){
 }
 
 function updatePinDots(){
-  for(let i=0;i<4;i++){
+  for(let i=0;i<6;i++){
     const d=document.getElementById('pd'+i);
     if(d)d.classList.toggle('filled',i<_pinBuffer.length);
   }
@@ -1203,22 +1263,43 @@ function showLoginErr(msg){
 function tryPinLogin(){
   const acc=_loginAccount;
   if(!acc)return;
+
+  // Check lockout
+  const attempts=_loginAttempts[acc.id]||{count:0,lockedUntil:0};
+  if(attempts.lockedUntil>Date.now()){
+    const remaining=Math.ceil((attempts.lockedUntil-Date.now())/1000/60);
+    showLoginErr(`Too many attempts. Account locked — try again in ${remaining} minute${remaining!==1?'s':''}.`);
+    return;
+  }
+
   if(_pinBuffer===acc.pin){
-    // Successful login
+    // Success — clear attempts
+    _loginAttempts[acc.id]={count:0,lockedUntil:0};
     APP.session={id:acc.id,name:acc.name,role:acc.role,studentId:acc.studentId||null};
-    if(acc.role==='student'&&acc.studentId){
-      APP.myStudentId=acc.studentId;
-    }
+    if(acc.role==='student'&&acc.studentId) APP.myStudentId=acc.studentId;
     saveAll();
     initSession();
-  } else if(_pinBuffer.length>=acc.pin.length){
-    showLoginErr('Incorrect PIN — please try again');
+  } else if(_pinBuffer.length>=6){
+    // Failed attempt
+    attempts.count=(attempts.count||0)+1;
+    if(attempts.count>=PIN_MAX_ATTEMPTS){
+      attempts.lockedUntil=Date.now()+PIN_LOCKOUT_MS;
+      attempts.count=0;
+      _loginAttempts[acc.id]=attempts;
+      showLoginErr(`Too many failed attempts. Account locked for 5 minutes.`);
+    } else {
+      _loginAttempts[acc.id]=attempts;
+      const remaining=PIN_MAX_ATTEMPTS-attempts.count;
+      showLoginErr(`Incorrect PIN — ${remaining} attempt${remaining!==1?'s':''} remaining.`);
+    }
   }
 }
 
 function initSession(){
   const s=APP.session;
   if(!s){renderLogin();return;}
+  // Start activity/timeout timer
+  resetActivityTimer();
   // Update topbar
   const barSess=document.getElementById('barSession');
   if(barSess){
@@ -1275,7 +1356,7 @@ function statusPill(status){
     draft:  '<span class="status-pill status-draft">✎ Draft</span>',
     pending:'<span class="status-pill status-pending">⏳ Awaiting approval</span>',
     feedback:'<span class="status-pill status-feedback">↩ Feedback received</span>',
-    met:    '<span class="status-pill status-met">✓ Met</span>',
+    met:    '<span class="status-pill status-met">✓ Completed</span>',
   };
   return map[status]||map.draft;
 }
@@ -1322,7 +1403,7 @@ function renderStudentHome(){
   <div class="main">
     <div class="ptitle">
       <div><div class="ph">My CAS Portfolio</div><div class="psub">IB CAS · ${esc(stuName)}</div></div>
-      <button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button>
+      <button class="btn" onclick="showSummary('${sid}')">📋 Summary</button>
     </div>
 
     ${feedbackItems.length?`<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:var(--rl);padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
@@ -1344,7 +1425,8 @@ function renderStudentHome(){
 function renderExpTab(sid,list){
   const type=APP.studentExpType||'single';
   const typeList=list.filter(e=>e.type===type);
-  const slots=EXP_SLOTS[type];
+  const slotMap=getSlots(sid);
+  const slots=slotMap[type];
   const typeInfo=ET[type];
   const needsProposal=typeInfo?.hasProposal;
 
@@ -1362,7 +1444,7 @@ function renderExpTab(sid,list){
       ${Object.keys(EXP_SLOTS).map(t=>{
         const n=list.filter(e=>e.type===t).length;
         const total=EXP_SLOTS[t];
-        return`<button class="sub-tab ${type===t?'on':''}" onclick="APP.studentExpType='${t}';APP._openExpId=null;renderStudentHome()">${ET[t].label.split(' ')[0]} <span style="opacity:.75">${n}/${total}</span></button>`
+        return`<button class="sub-tab ${type===t?'on':''}" onclick="APP.studentExpType='${t}';APP._openExpId=null;renderStudentHome()">${ET[t].label.split(' ')[0]} <span style="opacity:.75">${n}/${slotMap[t]}</span></button>`
       }).join('')}
     </div>
 
@@ -1534,7 +1616,7 @@ function openExpDetail(sid,expId){
             <button class="btn btn-sm" style="background:#f59e0b;color:#fff;border-color:#d97706" onclick="submitForApproval('${sid}','${exp.id}')">Resubmit →</button>
           `:''}
           ${status==='pending'?`<span style="font-size:13px;color:#92400e;padding:6px 12px;background:#fef3c7;border-radius:8px">Awaiting teacher review</span>`:''}
-          ${status==='met'?`<span style="font-size:13px;color:#16a34a;padding:6px 12px;background:#f0faf2;border-radius:8px;font-weight:600">✓ Approved by teacher</span>`:''}
+          ${status==='met'?`<span style="font-size:13px;color:#16a34a;padding:6px 12px;background:#f0faf2;border-radius:8px;font-weight:600">✓ Completed & approved</span>`:''}
         </div>
       </div>
 
@@ -1583,6 +1665,9 @@ function openExpDetail(sid,expId){
 
       <!-- Evidence files -->
       ${buildEvPanel(sid,exp.id,status==='draft'||status==='feedback')}
+
+      <!-- Comments thread -->
+      ${buildCommentsThread(sid,exp.id)}
     </div>
   </div>
   <style>@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}</style>`;
@@ -1649,12 +1734,13 @@ function renderPendingTab(sid,list){
 }
 
 function renderLOsTab(sid,list,metApproved){
+  const loTargets=getLoTargets(sid);
   return`<div>
     <div style="font-size:13px;color:var(--tx3);margin-bottom:14px">Each segment fills when an approved experience is linked to that outcome. Click any row to see linked experiences.</div>
     <div class="lo-pb-list">
       ${LOs.map((lo,i)=>{
         const met=metApproved[i];
-        const target=LO_TARGETS[lo.id]||6;
+        const target=loTargets[lo.id]||6;
         const approvedLinked=list.filter(e=>expStatus(e)==='met'&&(e.los||{})[lo.id]&&e.los[lo.id].met);
         const count=approvedLinked.length;
         const draftLinked=list.filter(e=>expStatus(e)!=='met'&&(e.los||{})[lo.id]);
@@ -1728,7 +1814,7 @@ function buildLOInlinePanel(sid,lo,linked){
           ${status==='feedback'&&e.teacherFeedback?`<div style="background:#fff5f5;border:1px solid #fca5a5;border-radius:6px;padding:6px 9px;margin-top:5px;font-size:12px;color:#991b1b"><strong>Feedback:</strong> ${esc(e.teacherFeedback.slice(0,100))}${e.teacherFeedback.length>100?'…':''}</div>`:''}
         </div>
         <div class="lo-exp-mini-actions">
-          ${status==='met'?`<span class="badge b-met" style="font-size:11px">✓ Met</span>`:''}
+          ${status==='met'?`<span class="badge b-met" style="font-size:11px">✓ Completed</span>`:''}
           ${status==='draft'||status==='feedback'?`<button class="btn btn-xs btn-p" onclick="submitForApproval('${sid}','${esc(e.id)}')">Submit</button>`:''}
           ${status==='draft'||status==='feedback'?`<button class="btn btn-xs" onclick="openEditExp('${esc(e.id)}')">Edit</button>`:''}
         </div>
@@ -1779,7 +1865,7 @@ function renderLODetailScreen(){
     <div class="lo-detail-header" style="margin-bottom:18px">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
         <div style="flex:1">
-          <div class="lo-detail-badge ${isMet?'met':'unmet'}" style="margin-bottom:10px">${lo.label} — ${isMet?'MET':'NOT YET MET'}</div>
+          <div class="lo-detail-badge ${isMet?'met':'unmet'}" style="margin-bottom:10px">${lo.label} — ${isMet?'COMPLETED':'NOT YET COMPLETED'}</div>
           <div style="font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:6px">${lo.title}</div>
           <div style="font-size:14px;color:var(--tx2);line-height:1.6">${lo.desc}</div>
           <div style="margin-top:10px;font-size:14px;font-weight:600;color:${isMet?'#16a34a':'#dc2626'}">
@@ -1866,7 +1952,7 @@ function renderLOActivities(sid, lo){
             :`<div style="font-size:13px;color:var(--tx3)">No reflection written yet. Edit this experience to add one.</div>`}
           ${d.evidence?`<div style="font-size:12px;color:var(--tx3);margin-top:5px">Notes: ${esc(d.evidence)}</div>`:''}
           <div style="margin-top:8px">
-            <span class="badge ${d.met?'b-met':'b-unmet'}">${d.met?'✓ LO marked as met':'LO not yet marked as met'}</span>
+            <span class="badge ${d.met?'b-met':'b-unmet'}">${d.met?'✓ LO marked as completed':'LO not yet completed'}</span>
           </div>
         </div>
 
@@ -1883,7 +1969,7 @@ function renderLOActivities(sid, lo){
         <!-- Teacher feedback -->
         ${status==='feedback'&&e.teacherFeedback?`<div class="feedback-box" style="margin-top:10px"><div class="feedback-label">Teacher feedback</div>${esc(e.teacherFeedback)}</div>`:''}
         ${status==='pending'?`<div style="margin-top:10px;font-size:13px;color:#92400e;background:#fef3c7;padding:8px 12px;border-radius:7px">⏳ Submitted and awaiting teacher review. No action needed.</div>`:''}
-        ${status==='met'?`<div style="margin-top:10px;font-size:13px;color:#16a34a;background:#f0faf2;padding:8px 12px;border-radius:7px;font-weight:600">✓ Teacher approved — this experience counts towards ${lo.label}.</div>`:''}
+        ${status==='met'?`<div style="margin-top:10px;font-size:13px;color:#16a34a;background:#f0faf2;padding:8px 12px;border-radius:7px;font-weight:600">✓ Teacher approved (Completed) — this experience counts towards ${lo.label}.</div>`:''}
 
         <!-- Upload evidence (for draft/feedback status) -->
         ${(status==='draft'||status==='feedback')?buildEvPanel(sid,e.id,true):''}
@@ -1921,6 +2007,102 @@ function renderTeacherHome(){
     </div>
     ${APP.teacherTab==='classes'?renderClassList():APP.teacherTab==='overview'?renderOverviewTable():renderApprovalsPanel()}
   </div>`;
+}
+
+function openStudentSettings(sid){
+  const stu=APP.students.find(s=>s.id===sid);
+  if(!stu)return;
+  const slots=stu.customSlots||{};
+  const targets=stu.customTargets||{};
+  const isDiploma=stu.diploma!==false; // default true
+
+  setModal(`<div class="modal" style="max-width:520px">
+    <div class="modal-h">
+      <div class="modal-title">Student settings — ${esc(stu.name)}</div>
+      <button class="mclose" onclick="setModal(null)">×</button>
+    </div>
+    <div style="font-size:13px;color:var(--tx2);margin-bottom:16px">Customise experience requirements and LO targets for this student. Use this for non-Diploma students or students with modified programmes.</div>
+
+    <div class="msec">Programme</div>
+    <div class="fg">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px">
+        <input type="checkbox" id="sDiploma" ${isDiploma?'checked':''} style="width:16px;height:16px;accent-color:var(--grn)">
+        Full IB Diploma student
+      </label>
+      <div style="font-size:12px;color:var(--tx3);margin-top:4px">Uncheck to allow the coordinator to deactivate experience types below.</div>
+    </div>
+
+    <div class="msec">Experience slot overrides</div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">Leave blank to use the default values (Single:10, Short:3, Extended:2, Project:1, Charity:1)</div>
+    <div class="fr">
+      ${Object.entries(EXP_SLOTS).map(([type,def])=>`<div class="fg">
+        <label>${ET[type].label.split(' ')[0]}</label>
+        <input type="number" id="sSlot_${type}" min="0" max="20" value="${slots[type]!==undefined?slots[type]:''}" placeholder="${def}" style="font-size:14px">
+      </div>`).join('')}
+    </div>
+
+    <div class="msec">LO target overrides</div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:10px">Leave blank to use defaults (LO1:16, LO2:16, LO3–5:6, LO6–7:3)</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+      ${LOs.map(lo=>`<div class="fg">
+        <label>${lo.label}</label>
+        <input type="number" id="sTarget_${lo.id}" min="0" max="30" value="${targets[lo.id]!==undefined?targets[lo.id]:''}" placeholder="${LO_TARGETS[lo.id]}" style="font-size:14px">
+      </div>`).join('')}
+    </div>
+
+    <div class="mfoot">
+      <button class="btn" onclick="setModal(null)">Cancel</button>
+      <button class="btn btn-p" onclick="saveStudentSettings('${sid}')">Save settings</button>
+    </div>
+  </div>`);
+}
+
+function saveStudentSettings(sid){
+  const stu=APP.students.find(s=>s.id===sid);if(!stu)return;
+  stu.diploma=document.getElementById('sDiploma')?.checked!==false;
+  // Slot overrides
+  const slots={};
+  Object.keys(EXP_SLOTS).forEach(type=>{
+    const v=document.getElementById('sSlot_'+type)?.value.trim();
+    if(v!==''&&v!==undefined&&!isNaN(parseInt(v)))slots[type]=parseInt(v);
+  });
+  stu.customSlots=Object.keys(slots).length?slots:{};
+  // LO target overrides
+  const targets={};
+  LOs.forEach(lo=>{
+    const v=document.getElementById('sTarget_'+lo.id)?.value.trim();
+    if(v!==''&&v!==undefined&&!isNaN(parseInt(v)))targets[lo.id]=parseInt(v);
+  });
+  stu.customTargets=Object.keys(targets).length?targets:{};
+  saveAll();setModal(null);
+  showToast('Student settings saved.','ok');
+  render();
+}
+
+// Get effective slot count (student override or global default)
+function getSlots(sid){
+  const stu=APP.students.find(s=>s.id===sid);
+  const custom=stu?.customSlots||{};
+  return Object.fromEntries(Object.keys(EXP_SLOTS).map(t=>[t,custom[t]!==undefined?custom[t]:EXP_SLOTS[t]]));
+}
+
+// Get effective LO targets (student override or global default)
+function getLoTargets(sid){
+  const stu=APP.students.find(s=>s.id===sid);
+  const custom=stu?.customTargets||{};
+  return Object.fromEntries(LOs.map(lo=>[lo.id,custom[lo.id]!==undefined?custom[lo.id]:LO_TARGETS[lo.id]]));
+}
+
+function bulkApproveAll(){
+  const pending=allPendingSubmissions();
+  if(!pending.length)return;
+  if(!confirm(`Mark all ${pending.length} pending experience submission${pending.length!==1?'s':''} as Completed? This cannot be undone.`))return;
+  pending.forEach(({student,exp})=>{
+    Object.keys(exp.los||{}).forEach(k=>{exp.los[k].met=true});
+    exp.status='met';exp.teacherFeedback='';
+  });
+  const n=pending.length;
+  saveAll();showToast(n+' experience'+(n!==1?'s':'')+' marked as Completed.','ok');render();
 }
 
 function renderApprovalsPanel(){
@@ -1971,9 +2153,12 @@ function renderApprovalsPanel(){
     ${pendingExps.length?`
     <!-- ── PENDING EXPERIENCES ── -->
     <div>
-      <div style="font-family:'DM Serif Display',serif;font-size:16px;margin-bottom:10px;display:flex;align-items:center;gap:10px">
-        Experience approvals
-        <span class="teacher-pending-badge">${pendingExps.length}</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div style="font-family:'DM Serif Display',serif;font-size:16px;display:flex;align-items:center;gap:10px">
+          Experience approvals
+          <span class="teacher-pending-badge">${pendingExps.length}</span>
+        </div>
+        ${pendingExps.length>1?`<button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="bulkApproveAll()">✓ Approve all ${pendingExps.length}</button>`:''}
       </div>
       <div style="display:flex;flex-direction:column;gap:10px">
         ${pendingExps.map(({student,exp})=>{
@@ -1993,7 +2178,7 @@ function renderApprovalsPanel(){
                 <div style="font-size:12px;color:var(--tx3);margin-top:5px">Submitted: ${exp.submittedAt?new Date(exp.submittedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):''}</div>
               </div>
               <div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column">
-                <button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="teacherMarkMet('${student.id}','${exp.id}')">✓ Mark as Met</button>
+                <button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="teacherMarkMet('${student.id}','${exp.id}')">✓ Mark as Completed</button>
                 <button class="btn btn-sm" onclick="openTeacherFeedback('${student.id}','${exp.id}')">↩ Return with Feedback</button>
               </div>
             </div>
@@ -2008,11 +2193,11 @@ function renderApprovalsPanel(){
 function teacherMarkMet(sid,expId){
   const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
   if(!exp)return;
-  // Mark all LOs in this experience as met
+  // Mark all LOs in this experience as completed
   Object.keys(exp.los||{}).forEach(k=>{exp.los[k].met=true});
   exp.status='met';exp.teacherFeedback='';
   saveAll();render();
-  showToast('Experience marked as met.','ok');
+  showToast('Experience marked as completed.','ok');
   if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
 }
 
@@ -2185,6 +2370,7 @@ function renderTeacherClass(){
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+            <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();openStudentSettings('${s.id}')" title="Student settings">⚙</button>
             <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();removeFromClass('${s.id}')">Remove</button>
             <span style="color:var(--tx3);font-size:18px">›</span>
           </div>
@@ -2208,7 +2394,7 @@ function renderTeacherStudent(){
     <div class="back-row">
       <button class="btn" onclick="APP.currentStudentId=null;APP.teacherExpFilter=null;render()">${cls?`← ${esc(cls.name)}`:'← Back'}</button>
       <div><div class="ph">${esc(stu.name)}</div><div class="psub">${stu.year} · ${fc} evidence file${fc!==1?'s':''}</div></div>
-      <div style="margin-left:auto"><button class="btn" onclick="printPDF('${sid}')">🖨 Print / PDF</button></div>
+      <div style="margin-left:auto"><button class="btn" onclick="showSummary('${sid}')">📋 Summary</button></div>
     </div>
 
     <!-- Clickable type filter cards -->
@@ -2228,7 +2414,7 @@ function renderTeacherStudent(){
         </div>`
       }).join('')}
       <div class="sc hi">
-        <div class="sl">LOs met</div>
+        <div class="sl">LOs completed</div>
         <div class="sv">${met.filter(Boolean).length}/7</div>
       </div>
     </div>
@@ -2279,7 +2465,7 @@ function renderExpListTeacher(sid, filterType){
         </div>
         <!-- Teacher approval actions -->
         ${status==='pending'?`<div style="display:flex;gap:6px;flex-direction:column;flex-shrink:0">
-          <button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="teacherMarkMet('${sid}','${e.id}')">✓ Mark as Met</button>
+          <button class="btn btn-sm" style="background:#16a34a;color:#fff;border-color:#16a34a" onclick="teacherMarkMet('${sid}','${e.id}')">✓ Mark as Completed</button>
           <button class="btn btn-sm" onclick="openTeacherFeedback('${sid}','${e.id}')">↩ Return with feedback</button>
         </div>`:''}
       </div>
@@ -2300,6 +2486,7 @@ function renderExpListTeacher(sid, filterType){
 //  MAIN RENDER
 // ══════════════════════════════════════════════════
 function render(){
+  touchActivity();
   if(!APP.session){renderLogin();return;}
   if(APP.session.role==='student') renderStudentView();
   else renderTeacherView();
@@ -2527,234 +2714,225 @@ function saveNewStudent(classId){
 // ══════════════════════════════════════════════════
 //  PDF / PRINT
 // ══════════════════════════════════════════════════
-function printPDF(sid){
+// ══════════════════════════════════════════════════
+//  COMMENTS THREAD
+// ══════════════════════════════════════════════════
+function addComment(sid, expId){
+  const text=document.getElementById('commentInput_'+expId)?.value.trim();
+  if(!text)return;
+  const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+  if(!exp)return;
+  if(!exp.comments)exp.comments=[];
+  exp.comments.push({
+    text, role:APP.session?.role||'student',
+    author:APP.session?.name||'Unknown',
+    ts:new Date().toISOString()
+  });
+  saveAll();
+  // Re-render just the comment thread
+  const area=document.getElementById('comments_'+expId);
+  if(area) area.outerHTML=buildCommentsThread(sid,expId);
+  else if(APP.role==='student') renderStudentHome();
+  if(configured())apiCall('saveExperience',{exp}).catch(()=>{});
+}
+
+function buildCommentsThread(sid, expId){
+  const exp=(APP.experiences[sid]||[]).find(e=>e.id===expId);
+  const comments=exp?.comments||[];
+  const isTeacher=APP.session?.role==='teacher';
+  const myRole=APP.session?.role||'student';
+
+  return`<div class="comments-thread" id="comments_${expId}">
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--tx3);margin-bottom:10px">
+      💬 Comments${comments.length?` (${comments.length})`:''}
+    </div>
+    ${comments.length?comments.map(cm=>{
+      const isTeacherComment=cm.role==='teacher';
+      const dt=new Date(cm.ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+      return`<div class="comment-item" style="${isTeacherComment?'flex-direction:row-reverse':''}">
+        <div class="comment-avatar ${isTeacherComment?'teacher':'student'}">${cm.author[0]||'?'}</div>
+        <div class="comment-bubble ${isTeacherComment?'teacher-bubble':''}">
+          <div class="comment-meta">${esc(cm.author)} · ${dt}</div>
+          ${esc(cm.text)}
+        </div>
+      </div>`;
+    }).join(''):'<div style="font-size:13px;color:var(--tx3);font-style:italic;margin-bottom:8px">No comments yet — use this thread to discuss this experience with your supervisor.</div>'}
+    <div class="comment-input-row">
+      <textarea class="comment-input" id="commentInput_${expId}" placeholder="Add a comment…" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();addComment('${sid}','${expId}')}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,80)+'px'"></textarea>
+      <button class="btn btn-sm btn-p" onclick="addComment('${sid}','${expId}')">Send</button>
+    </div>
+  </div>`;
+}
+
+function showSummary(sid){
   const stu=APP.students.find(s=>s.id===sid);if(!stu)return;
   const list=expsFor(sid);
-  const met=losMet(list);
+  const metFlags=losMet(list);
   const c={single:0,short:0,extended:0,project:0,charity:0};
   list.forEach(e=>{if(c[e.type]!==undefined)c[e.type]++});
   const today=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'long',year:'numeric'});
   const cls=APP.classes.find(cc=>cc.id===stu.classId);
   const totalFiles=list.reduce((n,e)=>n+(e.files||[]).length,0);
   const recs=getRecordings(sid);
-  const logoHtml=APP.logoUrl?`<img src="${APP.logoUrl}" class="pdf-logo" alt="Logo">`:`<div class="pdf-logo-ph">🏫</div>`;
+  const totalCompleted=metFlags.filter(Boolean).length;
 
+  // Build experience rows
   const expRows=list.map(e=>{
     const t=ET[e.type]||{};
     const strands=[e.creativity&&'C',e.activity&&'A',e.service&&'S'].filter(Boolean).join(', ');
-    const metLOs=Object.entries(e.los||{}).filter(([,d])=>d.met).map(([k])=>k.replace('lo','LO')).join(', ');
+    const compLOs=Object.entries(e.los||{}).filter(([,d])=>d.met).map(([k])=>k.replace('lo','LO')).join(', ');
     const fc=(e.files||[]).length;
-    const hasProposal=t.hasProposal&&e.proposal&&e.proposal.title;
-    return`<tr>
-      <td><strong>${esc(e.name)}</strong><br><span style="color:#9e9389;font-size:8pt">${esc(e.when||'')}${e.where?' · '+esc(e.where):''}${hasProposal?' · 📋 Proposal submitted':''}</span></td>
-      <td><span class="pdf-tb ${t.ptbc||''}">${t.label||e.type}</span></td>
-      <td>${esc(e.year||'')}</td>
-      <td>${esc(strands)}</td>
-      <td>${esc(metLOs)||'—'}</td>
-      <td>${fc?`📎 ${fc}`:'—'}</td>
-    </tr>`
+    const status=expStatus(e);
+    const statusCol=status==='met'?'#16a34a':status==='pending'?'#f59e0b':status==='feedback'?'#1a4f8a':'#dc2626';
+    const statusLabel=status==='met'?'Completed':status==='pending'?'Sent for approval':status==='feedback'?'Feedback received':'Working on';
+    return `<tr class="sum-exp-row" style="display:table-row">
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-weight:600;font-family:'DM Serif Display',serif">${esc(e.name)}<br>
+        <span style="font-size:12px;font-weight:400;color:var(--tx3)">${esc(e.when||'')}${e.where?' · '+esc(e.where):''}</span>
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr)"><span class="badge ${t.bc||''}">${t.label||e.type}</span></td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:12px;color:var(--tx3)">${esc(strands)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:12px">${esc(compLOs)||'—'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr)"><span style="font-size:12px;font-weight:600;color:${statusCol}">${statusLabel}</span></td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-size:12px;color:var(--tx3)">${fc?'📎 '+fc:'—'}</td>
+    </tr>`;
   }).join('');
 
-  const loItems=LOs.map((lo,i)=>{
-    const isMet=met[i];
-    const rel=list.filter(e=>(e.los||{})[lo.id]);
-    const best=rel.find(e=>e.los[lo.id].met&&e.los[lo.id].reflection)||rel.find(e=>e.los[lo.id].reflection);
-    const refl=best?best.los[lo.id].reflection:'';
-    const allFiles=rel.flatMap(e=>(e.files||[]));
-    return`<div class="pdf-lo-it ${isMet?'m':''}">
-      <div class="pdf-lo-hdr">
-        <span class="pdf-lo-tag ${isMet?'m':''}">${lo.label}</span>
-        <span class="pdf-lo-ttl">${lo.title}</span>
-        <span style="margin-left:auto;font-size:9pt;font-weight:600;color:${isMet?'#2d6a4f':'#991b1b'}">${isMet?'✓ Met':'Not yet met'}</span>
-      </div>
-      ${refl?`<div class="pdf-lo-ref">"${esc(refl)}"</div>`:'<div style="font-size:9pt;color:#9e9389;font-style:italic">No reflection recorded.</div>'}
-      ${allFiles.length?`<div class="pdf-lo-files">📎 ${allFiles.length} evidence file${allFiles.length!==1?'s':''} attached in Drive</div>`:''}
-    </div>`
-  }).join('');
-
+  // Build requirements rows
   const reqRows=[
     {label:'Single experiences',        type:'single',  y12:6,y13:4},
     {label:'Short (8 weeks)',            type:'short',   y12:2,y13:1},
     {label:'Extended (6 months)',        type:'extended',y12:1,y13:1},
     {label:'CAS Project',               type:'project', y12:1,y13:0},
-    {label:'Charity Fundraiser',          type:'charity', y12:1,y13:1},
+    {label:'Charity Fundraiser',         type:'charity', y12:1,y13:1},
   ].map(r=>{
     const y12d=list.filter(e=>e.type===r.type&&e.year==='Y12').length;
     const y13d=list.filter(e=>e.type===r.type&&e.year==='Y13').length;
-    const y12ok=y12d>=r.y12,y13ok=y13d>=r.y13||r.y13===0;
+    const y12ok=y12d>=r.y12; const y13ok=y13d>=r.y13||r.y13===0;
     return`<tr>
-      <td>${r.label}</td><td>${r.y12}</td>
-      <td class="${y12ok?'pdf-rmet':'pdf-rno'}">${y12d} ${y12ok?'✓':'✗'}</td>
-      <td>${r.y13||'—'}</td>
-      <td class="${r.y13===0?'':y13ok?'pdf-rmet':'pdf-rno'}">${r.y13===0?'—':y13d+' '+(y13ok?'✓':'✗')}</td>
-    </tr>`
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr);font-weight:600">${r.label}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr)">${r.y12}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr)" class="${y12ok?'sum-ok':'sum-no'}">${y12d} ${y12ok?'✓':'✗'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr)">${r.y13||'—'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid var(--bdr)" class="${r.y13===0?'':y13ok?'sum-ok':'sum-no'}">${r.y13===0?'—':y13d+' '+(y13ok?'✓':'✗')}</td>
+    </tr>`;
   }).join('');
 
-  const html=`<div class="pdf-wrap">
-    <div class="pdf-hdr">
-      ${logoHtml}
-      <div class="pdf-hdr-c"><div class="pdf-doc-title">CAS Review Document</div><div class="pdf-doc-sub">IB Creativity, Activity, Service — 2017 Syllabus</div></div>
-      <div class="pdf-hdr-r"><div><strong>Date:</strong> ${today}</div><div style="margin-top:4px"><strong>Class:</strong> ${esc(cls?cls.name:'—')}</div></div>
-    </div>
-    <div class="pdf-stu">
-      <div><div class="pdf-fl">Student name</div><div class="pdf-fv">${esc(stu.name)}</div></div>
-      <div><div class="pdf-fl">Year group</div><div class="pdf-fv">${esc(stu.year)}</div></div>
-      <div><div class="pdf-fl">Evidence files</div><div class="pdf-fv">${totalFiles} uploaded to Drive</div></div>
-    </div>
-    <div class="pdf-sec">Progress summary</div>
-    <div class="pdf-stats" style="grid-template-columns:repeat(6,1fr)">
-      <div class="pdf-stat"><div class="pdf-stat-l">Single</div><div class="pdf-stat-v">${c.single}</div></div>
-      <div class="pdf-stat"><div class="pdf-stat-l">Short</div><div class="pdf-stat-v">${c.short}</div></div>
-      <div class="pdf-stat"><div class="pdf-stat-l">Extended</div><div class="pdf-stat-v">${c.extended}</div></div>
-      <div class="pdf-stat"><div class="pdf-stat-l">Project</div><div class="pdf-stat-v">${c.project}</div></div>
-      <div class="pdf-stat"><div class="pdf-stat-l">Charity</div><div class="pdf-stat-v">${c.charity}</div></div>
-      <div class="pdf-stat hi"><div class="pdf-stat-l">LOs met</div><div class="pdf-stat-v">${met.filter(Boolean).length}/7</div></div>
-    </div>
-    <div class="pdf-sec">Learning outcomes</div>
-    <div class="pdf-lo-grid">${loItems}</div>
-    <div class="pdf-sec">Experience log</div>
-    ${list.length?`<table class="pdf-exp-table">
-      <thead><tr><th>Experience</th><th>Type</th><th>Year</th><th>Strands</th><th>LOs met</th><th>Files</th></tr></thead>
-      <tbody>${expRows}</tbody>
-    </table>`:'<p style="font-size:10pt;color:#9e9389;font-style:italic">No experiences recorded.</p>'}
-
-    ${list.filter(e=>ET[e.type]?.hasProposal&&e.proposal&&e.proposal.title).length?`
-    <div class="pdf-sec">Proposal summaries</div>
-    ${list.filter(e=>ET[e.type]?.hasProposal&&e.proposal&&e.proposal.title).map(e=>`
-    <div style="border:1px solid #e2ddd5;border-radius:8px;padding:12px 14px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="background:#fce7f3;color:#9d174d;padding:2px 8px;border-radius:8px;font-size:8.5pt;font-weight:700">${ET[e.type]?.label||e.type}</span>
-        <span style="font-size:11pt;font-weight:600">${esc(e.proposal.title)}</span>
+  // Build LO grid
+  const loGrid=LOs.map((lo,i)=>{
+    const comp=metFlags[i];
+    const rel=list.filter(e=>expStatus(e)==='met'&&(e.los||{})[lo.id]&&e.los[lo.id].met);
+    const best=rel.find(e=>e.los[lo.id].reflection)||rel[0];
+    const refl=best?best.los[lo.id].reflection:'';
+    const loFiles=rel.flatMap(e=>e.files||[]);
+    return`<div class="sum-lo ${comp?'comp':''}">
+      <div class="sum-lo-hdr">
+        <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:8px;background:${comp?'#d8f3dc':'var(--surf2)'};color:${comp?'#16a34a':'var(--tx3)'}">${lo.label}</span>
+        <span style="font-size:13px;font-weight:600">${lo.title}</span>
+        <span style="margin-left:auto;font-size:12px;font-weight:700;color:${comp?'#16a34a':'#dc2626'}">${comp?'✓ Completed':'Not yet'}</span>
       </div>
-      ${e.proposal.names?`<div style="font-size:9pt;color:#6b6258;margin-bottom:5px"><strong>Participants:</strong> ${esc(e.proposal.names)}</div>`:''}
-      ${e.proposal.desc?`<div style="font-size:9pt;color:#1c1814;margin-bottom:5px"><strong>Description:</strong> ${esc(e.proposal.desc)}</div>`:''}
-      ${e.proposal.goals?`<div style="font-size:9pt;color:#1c1814;margin-bottom:5px"><strong>Goals:</strong> ${esc(e.proposal.goals)}</div>`:''}
-      ${e.proposal.plan?`<div style="font-size:9pt;color:#1c1814;margin-bottom:5px"><strong>Action plan:</strong> ${esc(e.proposal.plan)}</div>`:''}
-      ${e.proposal.demo?`<div style="font-size:9pt;color:#1c1814"><strong>Demonstration:</strong> ${esc(e.proposal.demo)}</div>`:''}
-    </div>`).join('')}
-    `:''}
+      ${refl?`<div style="font-size:12px;color:var(--tx2);font-style:italic;line-height:1.5">"${esc(refl.length>120?refl.slice(0,120)+'…':refl)}"</div>`:''}
+      ${loFiles.length?`<div style="font-size:11px;color:var(--blu);margin-top:4px">📎 ${loFiles.length} evidence file${loFiles.length!==1?'s':''}</div>`:''}
+    </div>`;
+  }).join('');
 
-    <div class="pdf-sec">Requirements check</div>
-    <table class="pdf-req-table">
-      <thead><tr><th>Type</th><th>Y12 min</th><th>Y12 done</th><th>Y13 min</th><th>Y13 done</th></tr></thead>
-      <tbody>${reqRows}</tbody>
-    </table>
-    <div class="pdf-sec">Review meeting notes</div>
-    <div class="pdf-nl">Supervisor notes / actions agreed:</div>
-    <div class="pdf-notes"></div>
-    ${recs.length?`
-    <div class="pdf-sec">Review meeting recordings</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-      ${recs.map(r=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f0faf2;border:1px solid #6ee7b7;border-radius:8px">
-        <span style="font-size:14pt">▶</span>
+  const logoHtml=APP.logoUrl
+    ?`<img src="${APP.logoUrl}" style="width:52px;height:52px;border-radius:8px;object-fit:cover" alt="Logo">`
+    :`<div style="width:52px;height:52px;background:var(--acc);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff">C</div>`;
+
+  // Create overlay
+  const overlay=document.createElement('div');
+  overlay.className='summary-overlay';
+  overlay.id='summaryOverlay';
+  overlay.innerHTML=`
+    <div class="summary-topbar no-print">
+      <div style="display:flex;align-items:center;gap:14px">
+        ${logoHtml}
         <div>
-          <div style="font-size:10pt;font-weight:600;color:#1c1814">${esc(r.label)}</div>
-          <div style="font-size:8.5pt;color:#1a4f8a">${esc(r.url)}</div>
-          ${r.addedAt?`<div style="font-size:8pt;color:#9e9389">${new Date(r.addedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</div>`:''}
+          <div style="font-family:'DM Serif Display',serif;font-size:17px">${esc(stu.name)} — CAS Portfolio Summary</div>
+          <div style="font-size:12px;color:var(--tx3)">${esc(cls?cls.name:'')} · ${esc(stu.year)} · Generated ${today}</div>
         </div>
-      </div>`).join('')}
-    </div>`:''}
-    <div class="pdf-sigs">
-      <div class="pdf-sig">Student signature &amp; date<br><br><br></div>
-      <div class="pdf-sig">CAS supervisor signature &amp; date<br><br><br></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-p" onclick="window.print()">🖨 Print / Save as PDF</button>
+        <button class="btn" onclick="document.getElementById('summaryOverlay').remove()">✕ Close</button>
+      </div>
     </div>
-    <div class="pdf-foot"><span>CAS Portfolio Tracker · IB CAS</span><span>Generated ${today}</span></div>
-  </div>`;
 
-  // Build the full print document as a string
-  const printDoc=`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
-<title>CAS Review \u2014 ${esc(stu.name)}</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#fff;color:#1c1814;line-height:1.5;padding:0}
-.pdf-wrap{font-family:'DM Sans',sans-serif;font-size:11pt;color:#1c1814;padding:28px 32px;max-width:800px;margin:0 auto;background:#fff}
-.pdf-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;padding-bottom:14px;border-bottom:2.5px solid #c45c2a}
-.pdf-logo{width:58px;height:58px;object-fit:contain;border-radius:6px}
-.pdf-logo-ph{width:58px;height:58px;background:#f0ede6;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px}
-.pdf-hdr-c{flex:1;text-align:center;padding:0 14px}
-.pdf-doc-title{font-family:'DM Serif Display',serif;font-size:19pt;color:#c45c2a;margin-bottom:2px}
-.pdf-doc-sub{font-size:10pt;color:#6b6258}
-.pdf-hdr-r{text-align:right;font-size:10pt;color:#6b6258;min-width:110px}
-.pdf-stu{background:#f7f5f0;border-radius:10px;padding:13px 18px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.pdf-fl{font-size:9pt;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#9e9389;margin-bottom:1px}
-.pdf-fv{font-size:11pt;font-weight:600}
-.pdf-sec{font-family:'DM Serif Display',serif;font-size:13pt;margin:16px 0 9px;padding-bottom:5px;border-bottom:1px solid #e2ddd5}
-.pdf-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:16px}
-.pdf-stat{background:#f0ede6;border-radius:8px;padding:9px 12px;text-align:center}
-.pdf-stat-l{font-size:9pt;color:#9e9389;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:1px}
-.pdf-stat-v{font-size:17pt;font-family:'DM Serif Display',serif}
-.pdf-stat.hi{background:#c45c2a}
-.pdf-stat.hi .pdf-stat-l{color:rgba(255,255,255,.75)}.pdf-stat.hi .pdf-stat-v{color:#fff}
-.pdf-lo-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px}
-.pdf-lo-it{border:1px solid #e2ddd5;border-radius:8px;padding:9px 12px}
-.pdf-lo-it.m{background:#f0faf2;border-color:#6ee7b7}
-.pdf-lo-hdr{display:flex;align-items:center;gap:7px;margin-bottom:3px}
-.pdf-lo-tag{font-size:9pt;font-weight:700;padding:2px 6px;border-radius:10px;background:#dbeafe;color:#1a4f8a}
-.pdf-lo-tag.m{background:#d8f3dc;color:#2d6a4f}
-.pdf-lo-ttl{font-weight:600;font-size:10pt}
-.pdf-lo-ref{font-size:9pt;color:#6b6258;margin-top:2px;font-style:italic}
-.pdf-lo-files{margin-top:4px;font-size:8.5pt;color:#1a4f8a}
-.pdf-exp-table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:16px}
-.pdf-exp-table th{text-align:left;padding:7px 9px;background:#f0ede6;font-weight:600;color:#6b6258;font-size:8.5pt;text-transform:uppercase}
-.pdf-exp-table th:first-child{border-radius:5px 0 0 5px}.pdf-exp-table th:last-child{border-radius:0 5px 5px 0}
-.pdf-exp-table td{padding:7px 9px;border-bottom:1px solid #e2ddd5;vertical-align:top}
-.pdf-req-table{width:100%;border-collapse:collapse;font-size:9pt;margin-bottom:16px}
-.pdf-req-table th{text-align:left;padding:7px 9px;background:#f0ede6;font-weight:600;color:#6b6258;font-size:8.5pt;text-transform:uppercase}
-.pdf-req-table th:first-child{border-radius:5px 0 0 5px}.pdf-req-table th:last-child{border-radius:0 5px 5px 0}
-.pdf-req-table td{padding:7px 9px;border-bottom:1px solid #e2ddd5}
-.pdf-rmet{color:#2d6a4f;font-weight:600}.pdf-rno{color:#991b1b}
-.pdf-notes{border:1px solid #e2ddd5;border-radius:8px;padding:12px;min-height:90px;margin-top:5px}
-.pdf-nl{font-size:9pt;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#9e9389;margin-bottom:5px}
-.pdf-foot{margin-top:20px;padding-top:10px;border-top:1px solid #e2ddd5;display:flex;justify-content:space-between;font-size:8.5pt;color:#9e9389}
-.pdf-sigs{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:16px}
-.pdf-sig{border-top:1px solid #c8c0b4;padding-top:7px;font-size:9pt;color:#9e9389}
-.pdf-tb{display:inline-block;padding:2px 7px;border-radius:10px;font-size:8pt;font-weight:600}
-.pdf-tb-s{background:#fef3c7;color:#92400e}.pdf-tb-sh{background:#d8f3dc;color:#2d6a4f}
-.pdf-tb-e{background:#dbeafe;color:#1a4f8a}.pdf-tb-p{background:#ede9fe;color:#5b21b6}
-.print-bar{position:fixed;top:0;left:0;right:0;background:#1c1814;padding:10px 20px;display:flex;align-items:center;gap:12px;z-index:99;box-shadow:0 2px 8px rgba(0,0,0,.3)}
-.print-bar button{padding:8px 18px;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer}
-.pb-p{background:#c45c2a;color:#fff}.pb-c{background:#f0ede6;color:#1c1814}
-.print-bar-spacer{height:56px}
-@media print{.print-bar,.print-bar-spacer{display:none!important}@page{margin:14mm 12mm}body{padding:0}}
-</style></head><body>
-<div class="print-bar">
-  <button class="pb-p" onclick="window.print()">&#128424; Print / Save as PDF</button>
-  <button class="pb-c" onclick="window.close()">Close</button>
-  <span style="color:rgba(255,255,255,.55);font-size:13px">Tip: in the print dialog, choose &ldquo;Save as PDF&rdquo; as the destination</span>
-</div>
-<div class="print-bar-spacer"></div>
-${html}
-</body></html>`;
+    <div class="summary-body">
+      <!-- Header -->
+      <div class="sum-hdr">
+        <div>
+          <div class="sum-title">${esc(stu.name)}</div>
+          <div class="sum-sub">IB CAS Portfolio Summary · ${esc(cls?cls.name:'')} · ${esc(stu.year)} · ${today}</div>
+        </div>
+        ${logoHtml}
+      </div>
 
-  // Use Blob URL — works without popup permission and avoids document.write
-  try {
-    const blob=new Blob([printDoc],{type:'text/html'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.target='_blank';a.rel='noopener';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    // Revoke after a delay to allow the tab to load
-    setTimeout(()=>URL.revokeObjectURL(url),10000);
-  } catch(err) {
-    // Fallback: inject an iframe overlay inside the page
-    showToast('Opening print preview…','ok');
-    const overlay=document.createElement('div');
-    overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:#fff';
-    const closeBtn=document.createElement('button');
-    closeBtn.textContent='✕ Close preview';
-    closeBtn.style.cssText='position:fixed;top:12px;right:16px;z-index:10000;padding:8px 16px;background:#c45c2a;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer';
-    closeBtn.onclick=()=>{document.body.removeChild(overlay);document.body.removeChild(closeBtn)};
-    const iframe=document.createElement('iframe');
-    iframe.style.cssText='width:100%;height:100%;border:none';
-    iframe.srcdoc=printDoc;
-    overlay.appendChild(iframe);
-    document.body.appendChild(overlay);
-    document.body.appendChild(closeBtn);
-  }
+      <!-- Stats -->
+      <div class="sum-stats">
+        <div class="sum-stat"><div class="sum-stat-l">Single</div><div class="sum-stat-v">${c.single}</div></div>
+        <div class="sum-stat"><div class="sum-stat-l">Short</div><div class="sum-stat-v">${c.short}</div></div>
+        <div class="sum-stat"><div class="sum-stat-l">Extended</div><div class="sum-stat-v">${c.extended}</div></div>
+        <div class="sum-stat"><div class="sum-stat-l">Project</div><div class="sum-stat-v">${c.project}</div></div>
+        <div class="sum-stat"><div class="sum-stat-l">Charity</div><div class="sum-stat-v">${c.charity}</div></div>
+        <div class="sum-stat hi"><div class="sum-stat-l">LOs completed</div><div class="sum-stat-v">${totalCompleted}/7</div></div>
+      </div>
+
+      <!-- LO summary -->
+      <div class="sum-sec">Learning Outcomes</div>
+      <div class="sum-lo-grid">${loGrid}</div>
+
+      <!-- Experience log -->
+      <div class="sum-sec">Experience log</div>
+      ${list.length?`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px">
+        <thead><tr style="background:var(--surf2)">
+          <th style="text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--tx2)">Experience</th>
+          <th style="text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--tx2)">Type</th>
+          <th style="text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--tx2)">Strands</th>
+          <th style="text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--tx2)">LOs completed</th>
+          <th style="text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--tx2)">Status</th>
+          <th style="text-align:left;padding:8px 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--tx2)">Files</th>
+        </tr></thead>
+        <tbody>${expRows}</tbody>
+      </table>`:'<div style="font-size:13px;color:var(--tx3);margin-bottom:16px;font-style:italic">No experiences recorded yet.</div>'}
+
+      <!-- Requirements -->
+      <div class="sum-sec">Requirements check</div>
+      <table class="sum-req-table">
+        <thead><tr><th>Type</th><th>Y12 min</th><th>Y12 done</th><th>Y13 min</th><th>Y13 done</th></tr></thead>
+        <tbody>${reqRows}</tbody>
+      </table>
+
+      <!-- Review recordings -->
+      ${recs.length?`<div class="sum-sec">Review meeting recordings</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+        ${recs.map(r=>`<a href="${esc(r.url)}" target="_blank" rel="noopener" class="rec-link">
+          <span style="font-size:16px">▶</span><span class="rec-badge">REC</span>${esc(r.label)}
+          ${r.addedAt?`<span style="font-weight:400;opacity:.65;font-size:11px">· ${new Date(r.addedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}</span>`:''}
+        </a>`).join('')}
+      </div>`:''}
+
+      <!-- Notes and signatures -->
+      <div class="sum-sec">Review meeting notes</div>
+      <div class="sum-notes">Notes and actions agreed:</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px">
+        <div style="border-top:1px solid var(--bdr2);padding-top:8px;font-size:12px;color:var(--tx3)">Student signature &amp; date<br><br><br></div>
+        <div style="border-top:1px solid var(--bdr2);padding-top:8px;font-size:12px;color:var(--tx3)">CAS supervisor signature &amp; date<br><br><br></div>
+      </div>
+      <div style="margin-top:24px;padding-top:10px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;font-size:11px;color:var(--tx3)">
+        <span>IB CAS Portfolio Tracker · BISP</span><span>Generated ${today}</span>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  overlay.scrollTop=0;
 }
+
+// Keep printPDF as alias for compatibility
+function printPDF(sid){ showSummary(sid); }
+
 
 // ══════════════════════════════════════════════════
 //  PROPOSAL FORM (CAS Project & Charity Fundraiser)
@@ -3203,6 +3381,22 @@ function boot(){
     };
   }
   saveAll();
+
+  // Global activity tracker for session timeout
+  document.addEventListener('click', touchActivity, true);
+  document.addEventListener('keydown', touchActivity, true);
+
+  // Offline/online detection
+  window.addEventListener('offline', ()=>dot('err','Offline'));
+  window.addEventListener('online', ()=>{
+    dot('ok','Back online');
+    if(configured()&&APP.session){
+      dot('busy','Syncing…');
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'ping'})})
+        .then(r=>r.json()).then(()=>dot('ok','Synced')).catch(()=>dot('err','Sync failed'));
+    }
+  });
+  if(!navigator.onLine) dot('err','Offline — changes saved locally');
 
   renderLogo();
 
